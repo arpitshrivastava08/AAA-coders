@@ -1,4 +1,4 @@
-const user=require('../models/user');
+const { User, Complaint } = require('../models/user');
 const cloudary=require('../config/cloudinary');
 
 //geting the photourl after uploading the photo in the cloudanary
@@ -11,7 +11,7 @@ try{
 const result= await cloudary.uploader.upload(req.file.path,{
     folder:"complaints"
 });
-res.status(201),json({
+res.status(201).json({
     photourl:result.secure_url,
     message:"Photourl generated!!!"
 });
@@ -28,15 +28,16 @@ res.status(201),json({
 
 exports.newcomplaint=async(req,res)=>{
     try{
-        const {email,title,description,category,photourl,location,locationpin,}=req.body;
-        let user= await User.findOne({email});
+        const {email,title,description,category,photourl,location,locationpin,urgency}=req.body;
+        const user= await User.findOne({email});
         if(!user){
           return res.status(500).json({
                 message:"User not found!!!"
             });
         }
 
-        let comp={
+        const complaint=new Complaint({
+             user:user._id,
             title,
             description,
             category,
@@ -45,12 +46,10 @@ exports.newcomplaint=async(req,res)=>{
             status:"pending", //by default
             photourl,
             createdat: Date.now(),
-            priority:0
-        };
+            urgency:'low'
+        });
 
-        user.complaint.push(comp);
-
-        await user.save();
+        await complaint.save();
         res.status(201).json({
             message: 'Complaint saved Successfully!!!'
         });

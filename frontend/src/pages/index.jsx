@@ -14,7 +14,7 @@ export default function Login() {
   return (
     <div className="h-screen flex justify-center items-center bg-gray-100">
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow w-80">
-        <h1 className="text-center text-2xl mb-4">Login</h1>
+        <h1 className="text-center text-2xl mb-4">Logiiiiiiiin</h1>
         <input
           className="w-full p-2 border rounded mb-4"
           type="email"

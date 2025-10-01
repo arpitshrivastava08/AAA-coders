@@ -8,7 +8,7 @@ export default function Dashboard() {
       <bottompage/>
       <div className="p-4">
         <h6 className="text-2xl font-bold">Citizen ujyguihoiuygihigyhhjDashboard</h6>
-        <p className="mt-2">Welcome! Here you cnkjban track your complaints and points.</p>
+        <p className="mt-2">jhygutftguhiujouhiyugtyfguhiuygtfuygiuh98gyiuWelcome! Here you cnkjban track your complaints and points.</p>
       </div>
     </div>
   );
