@@ -1,0 +1,11 @@
+pass=.  GcGaLybQRkMhdQQb
+user - ashmitgupta2006_db_user
+
+
+connection url - mongodb+srv://ashmitgupta2006_db_user:GcGaLybQRkMhdQQb@clustercleancity0.mplzaet.mongodb.net/?retryWrites=true&w=majority&appName=Clustercleancity0
+
+
+
+NOW i want to store the image in cloudnary and store its url in the mongodb database 
+so we are firast installing its dependancies as 
+npm install multer cloudinary multer-storage-cloudinary
