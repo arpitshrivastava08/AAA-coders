@@ -21,7 +21,7 @@ const CitizenDashboard = () => {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
-    category: '',
+    category: 'Other',
     description: '',
     location: '',
   });
@@ -150,7 +150,7 @@ const CitizenDashboard = () => {
               </Typography>
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={6} size={4} >
                     <TextField
                       label="Complaint Title"
                       fullWidth
@@ -159,7 +159,7 @@ const CitizenDashboard = () => {
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={6} size={4}>
                     <FormControl fullWidth required>
                       <InputLabel>Category</InputLabel>
                       <Select
@@ -167,6 +167,7 @@ const CitizenDashboard = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, category: e.target.value })
                         }
+                        fullWidth
                         label="Category"
                       >
                         <MenuItem value="Road Damage">Road Damage</MenuItem>
@@ -178,7 +179,7 @@ const CitizenDashboard = () => {
                     </FormControl>
                   </Grid>
 
-                  <Grid item xs={12}>
+                  <Grid item xs={12} size={4}>
                     <TextField
                       label="Location"
                       fullWidth
@@ -188,7 +189,7 @@ const CitizenDashboard = () => {
                     />
                   </Grid>
 
-                  <Grid item xs={12}>
+                  <Grid item xs={12} size={8}>
                     <TextField
                       label="Description"
                       multiline
@@ -200,7 +201,7 @@ const CitizenDashboard = () => {
                     />
                   </Grid>
 
-                  <Grid item xs={12}>
+                  <Grid item xs={12} size={4}>
                     <Button
                       component="label"
                       variant="outlined"
