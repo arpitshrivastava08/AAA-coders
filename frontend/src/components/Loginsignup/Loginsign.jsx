@@ -3,6 +3,7 @@ import '../Loginsignup/Loginsign.css'
 import user_icon from '../Assets/person.png'
 import email_icon from '../Assets/email.png'
 import password_icon from '../Assets/password.png'
+import { postuser } from '../utility/utility'
 // import CircusTentIcon from './circus-tent.png'; // or .svg, .jpg etc.
 
 export const Loginsign = () => {
@@ -11,8 +12,42 @@ export const Loginsign = () => {
   const[Email,setEmail]=useState('');
   const[Password,setPassword]=useState('');
   const[OTP,setOTP]=useState('');
+  const[Displayotp,setDisplayotp]=useState(false);
   const [Role,setRole]=useState('citizen');
+  
+
+
+const Emailvalidation=(Email)=>{
+         const regex = /^[a-zA-Z0-9._%+-]+@(gmail\.com|yahoo\.com|outlook\.com|hotmail\.com|mail\.com)$/;
+         return regex.test(Email.toLowerCase()); //test the email formation
+     };
+     const Passwordvalidation=(Password)=>{ //test the password
+        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=!]).{8,}$/;
+        return regex.test(Password);
+     };
+     const sendotp=async ()=>{
+     if(await postuser({name:Name,email:Email,password:Password,role:Role},"register")){
+      setDisplayotp(true);
+     }
+      return false;
+  };
+  const verify=async()=>{
+     if( await postuser({email:Email,otp:OTP},"verifyotp")){
+      setDisplayotp(false);
+      setAction('Login');
+    }
+  };
+  const login=async()=>{
+     if(await postuser({email:Email,password:Password,role:Role},"login")){
+      //dashboard should be displayed!!!
+      alert("Login!");
+     }
+
+  };
+
+
   return (
+
 
 
     <div>
@@ -38,12 +73,12 @@ export const Loginsign = () => {
              {/* adding A empth div because in email and password we are giving a div 
             which takes space so it disturbs the look so we are making it equal */}
             <div></div>
-                      <div className="input selectt">
+   <div className="input selectt">
   <img src={user_icon} alt="" />
   <select value={Role} onChange={(e) => setRole(e.target.value)}>
-    <option value="citizen">Citizen</option>
-    <option value="staff">Staff</option>
-    <option value="admin">Admin</option>
+    <option value="citizen">citizen</option>
+    <option value="staff">staff</option>
+    <option value="admin">admin</option>
   </select>
 </div>  
        <div className='input'>
@@ -59,7 +94,7 @@ export const Loginsign = () => {
                 <input type="Password" placeholder='Password' value={Password} id='Password' onChange={(curr)=>setPassword(curr.target.value)}/>
 
         </div>  
-      {  Action==="Sign Up"?(<div className='input'>
+      {  (Action===("Sign Up") && Displayotp)?(<div className='input'>
            <img src={password_icon} alt="" />
                 {/* onChange helps in updating the live input value to variable of input */}
                 <input type="Password" placeholder='OTP' value={OTP} id='OTP' onChange={(curr)=>setOTP(curr.target.value)}/>
@@ -68,11 +103,43 @@ export const Loginsign = () => {
         }
    
         <div className="Submit_container">
-          <div className={Action!=="Sign Up"?'Submit white':'Submit'} onClick={()=>{
-            setAction("Sign Up")}
+          <div className={(Action!=="Sign Up"  )?'Submit white':'Submit'} onClick={async()=>{
+            if(Displayotp){
+              await verify();
+            }
+            else{
+            if(Action==='Sign Up'){ 
+        if( Emailvalidation(Email) && Passwordvalidation(Password) && Name){
+            await sendotp();
+          }else alert("Please enter Email correctly Or Set a strong Password!! Or enter name")
+            }
+            else{
+      setAction("Sign Up");
+      setDisplayotp(false);
+            setEmail('');
+            setName('');
+            setOTP("");
+            setPassword('');
+            }
+          }
+    }
            }>Sign Up</div>
-           <div className={Action==="Sign Up"?'Submit white':'Submit'} onClick={()=>{
-            setAction("Login")
+           <div className={Action==="Sign Up"?'Submit white':'Submit'} onClick={async()=>{
+            if(Action==='Login'){ 
+              if( Emailvalidation(Email) && Passwordvalidation(Password)){ 
+                await login();
+              }
+        else
+        alert("Please enter Email correctly Or Set a strong Password!!")
+            }else{
+
+            setAction("Login");
+            setDisplayotp(false);
+            setEmail('');
+            setName('');
+            setOTP("");
+            setPassword('');
+            }
            }}>Login</div>
           
         </div>
