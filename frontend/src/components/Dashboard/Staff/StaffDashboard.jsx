@@ -243,14 +243,13 @@ const StaffDashboard = () => {
                 const statusStyles = getStatusColor(complaint.status);
                 const priorityStyles = getPriorityColor(complaint.priority);
                 return (
-                  <Grid item xs={12} md={6} key={complaint.id}>
+                  <Grid item xs={12} md={6} key={complaint.id} size={6}>
                     <Paper
                       elevation={2}
                       sx={{
                         p: 3,
                         display: 'flex',
-                        flexDirection: 'column',
-                        height: '100%',
+                        flexDirection: 'column'
                       }}
                     >
                       <Stack spacing={2} sx={{ flexGrow: 1 }}>
