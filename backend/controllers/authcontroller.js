@@ -151,15 +151,28 @@ exports.login= async(req,res)=>{
         if(user.password!=password) return res.status(400).json({message:'User password is incorrect'});
         if(!user.isverified) return res.status(400).json({message:'email not verifiend'});
 
-        req.session.user={id:user.email,name:user.name}; //creates a session on successfull login
+        req.session.user={
+            id:user._id,
+            name:user.name,
+            email:user.email,
+            role:user.role
+        }; //creates a session on successfull login
         //session is a tempararoy memory on serve to remember who are we while browing and calling router like after login ones when the router s are again called then they need to know is this person authorotised or not like this!!!1
         //This avoid for asking email and password again and again
+        
         res.status(200).json(
             {
             message:'login succesfull',
             role:user.role,
-            name:user.name
-
-
+            name:user.name,
         }) //user
+};
+exports.logout = (req, res) => {
+    req.session.destroy((err) => { // it delete the user session data from yhe server
+        //it ensure server forgets who the user was without session the user is treated as logout
+        if (err) {
+            return res.status(500).json({ message: 'Logout failed', error: err });
+        }
+        res.json({ message: 'Logout successful' });
+    });
 };

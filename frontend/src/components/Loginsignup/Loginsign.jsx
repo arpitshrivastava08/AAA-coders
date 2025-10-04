@@ -38,7 +38,7 @@ const Emailvalidation=(Email)=>{
     }
   };
   const login=async()=>{
-     if(await postuser({email:Email,password:Password,role:Role},"login")){
+     if(await postuser({email:Email,password:Password},"login")){
       //dashboard should be displayed!!!
       alert("Login!");
      }
