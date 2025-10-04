@@ -4,7 +4,7 @@ import user_icon from '../Assets/person.png'
 import email_icon from '../Assets/email.png'
 import password_icon from '../Assets/password.png'
 import { postuser } from '../utility/utility'
-// import CircusTentIcon from './circus-tent.png'; // or .svg, .jpg etc.
+
 
 export const Loginsign = () => {
   const[Action,setAction]=useState("Sign Up");
