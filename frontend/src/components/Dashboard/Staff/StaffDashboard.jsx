@@ -32,7 +32,54 @@ const StaffDashboard = () => {
   const [filterCategory, setFilterCategory] = useState('all');
 
   const allComplaints = [
-    // ... your complaint objects ...
+    {
+      id: 'C001',
+      title: 'Pothole on Main Street',
+      category: 'Road Damage',
+      description: 'Large pothole causing traffic issues near the intersection',
+      location: 'Main Street, Block A',
+      status: 'Open',
+      date: '2025-10-02',
+      citizenName: 'Akshita Khandelwal',
+      priority: 'High',
+      assignedTo: null,
+    },
+    {
+      id: 'C002',
+      title: 'Water Leak Near Park',
+      category: 'Water Leakage',
+      description: 'Continuous water leakage from pipeline causing water wastage',
+      location: 'Central Park, Gate 2',
+      status: 'In Progress',
+      date: '2025-10-01',
+      citizenName: 'Ashmit Gupta',
+      priority: 'Medium',
+      assignedTo: 'Municipal Worker #12',
+    },
+    {
+      id: 'C003',
+      title: 'Garbage Not Collected',
+      category: 'Garbage',
+      description: 'Garbage bin overflowing for 3 days, causing hygiene issues',
+      location: 'Sector 5, Street 12',
+      status: 'Open',
+      date: '2025-10-01',
+      citizenName: 'Arpit Kumar',
+      priority: 'High',
+      assignedTo: null,
+    },
+    {
+      id: 'C004',
+      title: 'Broken Street Light',
+      category: 'Street Light',
+      description: 'Street light not working, creating safety concerns at night',
+      location: 'Park Avenue, Lane 3',
+      status: 'Resolved',
+      date: '2025-09-28',
+      citizenName: 'Rajesh Sharma',
+      priority: 'Low',
+      assignedTo: 'Electrician Team A',
+    },
   ];
 
   const getStatusColor = (status) => {
