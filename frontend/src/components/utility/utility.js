@@ -18,4 +18,4 @@ export const postuser=async(data,uurl)=>{
     alert(result.message);// //something wronge////
     return false;
     }
-}
+};
