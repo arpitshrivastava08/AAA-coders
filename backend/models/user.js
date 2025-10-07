@@ -4,8 +4,8 @@ const complaintschema= new mongoose.Schema({
   user:{type:mongoose.Schema.Types.ObjectId,ref:'User',required:true}, //reference to user
   title: { type: String, required: true },
   description: { type: String, required: true },
-  category: { type: String, enum: ['road', 'park', 'market', 'residential'], required: true },
-  urgency: { type: String, enum: ['low', 'medium', 'high'], required: true },
+  category: { type: String, enum: ['Road Damage', 'Water Leakage', 'Garbage Collection', 'Street Light','Other'], required: true },
+  urgency: { type: String, enum: ['Low', 'Medium', 'High'], default:'Low' },
   photourl: { type: String },
   location: {type:String,required:true} ,
   locationpin:{type:String,required:true},

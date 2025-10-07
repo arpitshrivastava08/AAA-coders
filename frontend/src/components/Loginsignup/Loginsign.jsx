@@ -4,6 +4,7 @@ import user_icon from '../Assets/person.png'
 import email_icon from '../Assets/email.png'
 import password_icon from '../Assets/password.png'
 import { postuser } from '../utility/utility'
+import { useNavigate } from 'react-router-dom';
 
 
 export const Loginsign = () => {
@@ -37,10 +38,14 @@ const Emailvalidation=(Email)=>{
       setAction('Login');
     }
   };
-  const login=async()=>{
-     if(await postuser({email:Email,password:Password},"login")){
-      //dashboard should be displayed!!!
-      alert("Login!");
+   const navigate=useNavigate();
+  const loginn=async()=>{
+    let result=await postuser({email:Email,password:Password,role:Role},"login");
+     if(result){
+if (result.role === "citizen") navigate("/citizen");
+else if (result.role === "admin") navigate("/admin");
+else if (result.role === "staff") navigate("/staff");
+//dashboard should be displayed!!!
      }
 
   };
@@ -127,7 +132,7 @@ const Emailvalidation=(Email)=>{
            <div className={Action==="Sign Up"?'Submit white':'Submit'} onClick={async()=>{
             if(Action==='Login'){ 
               if( Emailvalidation(Email) && Passwordvalidation(Password)){ 
-                await login();
+                 loginn();
               }
         else
         alert("Please enter Email correctly Or Set a strong Password!!")

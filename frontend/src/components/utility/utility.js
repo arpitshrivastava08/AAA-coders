@@ -12,7 +12,7 @@ export const postuser=async(data,uurl)=>{
      if((await response).ok){
         alert(result.message); //result.user.name
         // //shows success message!!!////
-        return true;
+        return result;
         }
     else{
     alert(result.message);// //something wronge////
