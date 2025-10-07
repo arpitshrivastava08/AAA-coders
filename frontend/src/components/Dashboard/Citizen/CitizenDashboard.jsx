@@ -24,6 +24,7 @@ const CitizenDashboard = () => {
     category: 'Other',
     description: '',
     location: '',
+    pin:''
   });
   const [showToast, setShowToast] = useState(false);
 
@@ -61,6 +62,29 @@ const CitizenDashboard = () => {
       hasPhoto: false,
       points: 50,
     },
+    {
+      id: 'C003',
+      title: 'Garbage Not Collected',
+      category: 'Garbage',
+      description: 'Garbage bin overflowing for 3 days',
+      location: 'Sector 5, Street 12',
+      status: 'Open',
+      date: '2025-10-01',
+      hasPhoto: false,
+      points: 50,
+    },
+    {
+      id: 'C003',
+      title: 'Garbage Not Collected',
+      category: 'Garbage',
+      description: 'Garbage bin overflowing for 3 days',
+      location: 'Sector 5, Street 12',
+      status: 'Open',
+      date: '2025-10-01',
+      hasPhoto: false,
+      points: 50,
+    }
+    
   ];
 
   const handleSubmit = (e) => {
@@ -188,6 +212,7 @@ const CitizenDashboard = () => {
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     />
                   </Grid>
+                  
 
                   <Grid item xs={12} size={8}>
                     <TextField
@@ -198,6 +223,15 @@ const CitizenDashboard = () => {
                       required
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </Grid>
+                   <Grid item xs={12} size={4}>
+                    <TextField
+                      label="Location Pincode"
+                      fullWidth
+                      required
+                      value={formData.pin}
+                      onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
                     />
                   </Grid>
 
