@@ -21,9 +21,10 @@ const CitizenDashboard = () => {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
-    category: '',
+    category: 'Other',
     description: '',
     location: '',
+    pin:''
   });
   const [showToast, setShowToast] = useState(false);
 
@@ -61,6 +62,29 @@ const CitizenDashboard = () => {
       hasPhoto: false,
       points: 50,
     },
+    {
+      id: 'C003',
+      title: 'Garbage Not Collected',
+      category: 'Garbage',
+      description: 'Garbage bin overflowing for 3 days',
+      location: 'Sector 5, Street 12',
+      status: 'Open',
+      date: '2025-10-01',
+      hasPhoto: false,
+      points: 50,
+    },
+    {
+      id: 'C003',
+      title: 'Garbage Not Collected',
+      category: 'Garbage',
+      description: 'Garbage bin overflowing for 3 days',
+      location: 'Sector 5, Street 12',
+      status: 'Open',
+      date: '2025-10-01',
+      hasPhoto: false,
+      points: 50,
+    }
+    
   ];
 
   const handleSubmit = (e) => {
@@ -150,7 +174,7 @@ const CitizenDashboard = () => {
               </Typography>
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={6} size={4} >
                     <TextField
                       label="Complaint Title"
                       fullWidth
@@ -159,7 +183,7 @@ const CitizenDashboard = () => {
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={6} size={4}>
                     <FormControl fullWidth required>
                       <InputLabel>Category</InputLabel>
                       <Select
@@ -167,6 +191,7 @@ const CitizenDashboard = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, category: e.target.value })
                         }
+                        fullWidth
                         label="Category"
                       >
                         <MenuItem value="Road Damage">Road Damage</MenuItem>
@@ -178,7 +203,7 @@ const CitizenDashboard = () => {
                     </FormControl>
                   </Grid>
 
-                  <Grid item xs={12}>
+                  <Grid item xs={12} size={4}>
                     <TextField
                       label="Location"
                       fullWidth
@@ -187,8 +212,9 @@ const CitizenDashboard = () => {
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     />
                   </Grid>
+                  
 
-                  <Grid item xs={12}>
+                  <Grid item xs={12} size={8}>
                     <TextField
                       label="Description"
                       multiline
@@ -199,8 +225,17 @@ const CitizenDashboard = () => {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
                   </Grid>
+                   <Grid item xs={12} size={4}>
+                    <TextField
+                      label="Location Pincode"
+                      fullWidth
+                      required
+                      value={formData.pin}
+                      onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
+                    />
+                  </Grid>
 
-                  <Grid item xs={12}>
+                  <Grid item xs={12} size={4}>
                     <Button
                       component="label"
                       variant="outlined"
