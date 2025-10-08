@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import {
   Box,
   Button,
@@ -16,17 +16,29 @@ import {
 import { Add, CloudUpload, EmojiEvents } from '@mui/icons-material';
 import { Header } from '../Shared/Header/Header';
 import { Footer } from '../Shared/Footer/Footer';
+import { postComplaint} from '../../utility/utility';
+
 
 const CitizenDashboard = () => {
+  const[email,setEmail]=useState('');
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('userEmail');
+    if (storedEmail) {
+      setEmail(storedEmail);
+    }
+  }, []);
+
   const [showForm, setShowForm] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+
   const [formData, setFormData] = useState({
     title: '',
     category: 'Other',
     description: '',
     location: '',
-    pin:''
+    pin:0,
+    photoUrl:null,
   });
-  const [showToast, setShowToast] = useState(false);
 
   const userComplaints = [
     {
@@ -87,12 +99,28 @@ const CitizenDashboard = () => {
     
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
+
     e.preventDefault();
     // Simulate success
+    const email = localStorage.getItem("userEmail");  // ✅ get saved email
+
+  const dataToSend = {
+    ...formData,
+    email: email,
+    pin: formData.pin || "000000",  // or collect pin in form properly
+  };
+
+  const success = await postComplaint(dataToSend, "newComplaint");
+
+  if (success) {
+    // alert("Run");
     setShowToast(true);
-    setFormData({ title: '', category: '', description: '', location: '' });
+    setFormData({ title: '', category: '', description: '', location: '', pin: '' });
     setShowForm(false);
+  } else {
+    alert("Complaint submission failed ❌");
+  }
   };
 
   const totalPoints = userComplaints.reduce((sum, complaint) => sum + (complaint.points || 0), 0);
@@ -225,15 +253,27 @@ const CitizenDashboard = () => {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
                   </Grid>
-                   <Grid item xs={12} size={4}>
+                  <Grid item xs={12} sm={4}>
                     <TextField
                       label="Location Pincode"
                       fullWidth
                       required
                       value={formData.pin}
-                      onChange={(e) => setFormData({ ...formData, pin: e.target.value })}
+                      inputProps={{ maxLength: 6 , minLength: 6}}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d*$/.test(value)) {
+                          setFormData({ ...formData, pin: value });
+                        }else{
+                           <Alert onClose={() => setShowToast(false)} severity="success" sx={{ width: '100%' }}>
+                            Please enter a valid pincode!
+                          </Alert>
+
+                        }
+                      }}
                     />
                   </Grid>
+
 
                   <Grid item xs={12} size={4}>
                     <Button
@@ -248,7 +288,7 @@ const CitizenDashboard = () => {
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <Button type="submit" variant="contained" fullWidth>
+                    <Button type="submit"  variant="contained" fullWidth>
                       Submit Complaint
                     </Button>
                   </Grid>
@@ -303,7 +343,7 @@ const CitizenDashboard = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={() => setShowToast(false)} severity="success" sx={{ width: '100%' }}>
-          Complaint submitted! You earned 50 points!
+          Complaint submitted!
         </Alert>
       </Snackbar>
     </Box>
