@@ -79,11 +79,12 @@ exports.verifyotp=async(req,res)=>{
             message:'Email verified! Successfully. Please Login Now!!!'})
 }
 exports.login= async(req,res)=>{
-        const {email,password}=req.body;
+        const {email,password,role}=req.body;
         const user=await User.findOne({email});
         if(!user) return res.status(400).json({message:'User Not Found'});
         if(user.password!=password) return res.status(400).json({message:'User password is incorrect'});
         if(!user.isverified) return res.status(400).json({message:'email not verifiend'});
+        if(user.role!=role) return res.status(404).json({message:'trying to login as someone else!!!'});
 
         req.session.user={
             id:user._id,
