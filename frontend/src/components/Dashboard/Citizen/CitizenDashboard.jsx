@@ -16,7 +16,7 @@ import {
 import { Add, CloudUpload, EmojiEvents } from '@mui/icons-material';
 import { Header } from '../Shared/Header/Header';
 import { Footer } from '../Shared/Footer/Footer';
-import { postComplaint} from '../../utility/utility';
+import { postComplaint, getComplaints} from '../../utility/utility';
 
 
 const CitizenDashboard = () => {
@@ -40,70 +40,25 @@ const CitizenDashboard = () => {
     photoUrl:null,
   });
 
-  const userComplaints = [
-    {
-      id: 'C001',
-      title: 'Pothole on Main Street',
-      category: 'Road Damage',
-      description: 'Large pothole causing traffic issues',
-      location: 'Main Street, Block A',
-      status: 'In Progress',
-      date: '2025-09-28',
-      hasPhoto: true,
-      points: 50,
-    },
-    {
-      id: 'C002',
-      title: 'Water Leak Near Park',
-      category: 'Water Leakage',
-      description: 'Continuous water leakage from pipeline',
-      location: 'Central Park, Gate 2',
-      status: 'Resolved',
-      date: '2025-09-20',
-      hasPhoto: true,
-      points: 100,
-    },
-    {
-      id: 'C003',
-      title: 'Garbage Not Collected',
-      category: 'Garbage',
-      description: 'Garbage bin overflowing for 3 days',
-      location: 'Sector 5, Street 12',
-      status: 'Open',
-      date: '2025-10-01',
-      hasPhoto: false,
-      points: 50,
-    },
-    {
-      id: 'C003',
-      title: 'Garbage Not Collected',
-      category: 'Garbage',
-      description: 'Garbage bin overflowing for 3 days',
-      location: 'Sector 5, Street 12',
-      status: 'Open',
-      date: '2025-10-01',
-      hasPhoto: false,
-      points: 50,
-    },
-    {
-      id: 'C003',
-      title: 'Garbage Not Collected',
-      category: 'Garbage',
-      description: 'Garbage bin overflowing for 3 days',
-      location: 'Sector 5, Street 12',
-      status: 'Open',
-      date: '2025-10-01',
-      hasPhoto: false,
-      points: 50,
-    }
-    
-  ];
+  const [complaint, setUserComplaints] = useState([]);
 
+  // new useEffect to fetch complaints
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      // Call the new GET utility function
+      const data = await getComplaints("myComplaints"); 
+      if (data) {
+        setUserComplaints(data); // Set the state with fetched data
+      }
+    };
+
+    fetchComplaints();
+  }, []); 
   const handleSubmit = async(e) => {
 
     e.preventDefault();
     // Simulate success
-    const email = localStorage.getItem("userEmail");  // ✅ get saved email
+    const email = localStorage.getItem("userEmail");  //  get saved email
 
   const dataToSend = {
     ...formData,
@@ -114,16 +69,20 @@ const CitizenDashboard = () => {
   const success = await postComplaint(dataToSend, "newComplaint");
 
   if (success) {
+    const data = await getComplaints("myComplaints"); 
+      if (data) {
+        setUserComplaints(data); // Set the state with fetched data
+      }
     // alert("Run");
     setShowToast(true);
     setFormData({ title: '', category: '', description: '', location: '', pin: '' });
     setShowForm(false);
   } else {
-    alert("Complaint submission failed ❌");
+    alert("Complaint submission failed ");
   }
   };
 
-  const totalPoints = userComplaints.reduce((sum, complaint) => sum + (complaint.points || 0), 0);
+  const totalPoints = complaint.reduce((sum, complaint) => sum + (complaint.points || 0), 0);
 
   return (
     <Box className="min-h-screen flex flex-col">
@@ -146,14 +105,14 @@ const CitizenDashboard = () => {
             <Grid item xs={12} sm={6} md={3}>
               <Paper elevation={3} sx={{ p: 2 }}>
                 <Typography color="text.secondary">Total Complaints</Typography>
-                <Typography variant="h5">{userComplaints.length}</Typography>
+                <Typography variant="h5">{complaint.length}</Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Paper elevation={3} sx={{ p: 2 }}>
                 <Typography color="text.secondary">Resolved</Typography>
                 <Typography variant="h5">
-                  {userComplaints.filter((c) => c.status === 'Resolved').length}
+                  {complaint.filter((c) => c.status === 'Resolved').length}
                 </Typography>
               </Paper>
             </Grid>
@@ -161,7 +120,7 @@ const CitizenDashboard = () => {
               <Paper elevation={3} sx={{ p: 2 }}>
                 <Typography color="text.secondary">In Progress</Typography>
                 <Typography variant="h5" color="warning.main">
-                  {userComplaints.filter((c) => c.status === 'In Progress').length}
+                  {complaint.filter((c) => c.status === 'In Progress').length}
                 </Typography>
               </Paper>
             </Grid>
@@ -308,8 +267,8 @@ const CitizenDashboard = () => {
               My Complaints
             </Typography>
             <Grid container spacing={3}>
-              {userComplaints.map((complaint) => (
-                <Grid item xs={12} md={6} lg={4} key={complaint.id}>
+              {complaint.map((complaint) => (
+                <Grid item xs={12} md={6} lg={4} key={complaint._id}>
                   <Paper elevation={2} sx={{ p: 2 }}>
                     <Typography variant="subtitle1" fontWeight="bold">
                       {complaint.title}

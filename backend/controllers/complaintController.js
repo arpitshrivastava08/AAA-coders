@@ -2,6 +2,35 @@ const Complaint = require('../models/complaint.js');
 const User = require('../models/user.js');
 const cloudinary=require('../config/cloudinary.js');
 
+// New function to fetch complaints for the logged-in user
+exports.getUserComplaints = async (req, res) => {
+    try {
+        // 1. Check if the user is authenticated (session exists)
+        if (!req.session.user || !req.session.user.id) {
+            return res.status(401).json({ message: 'Unauthorized. Please log in.' });
+        }
+
+        const userId = req.session.user.id;
+
+        // 2. Find all complaints linked to this user ID
+        const complaints = await Complaint.find({ user: userId })
+            .sort({ createdate: -1 }); // Sort by newest first
+
+        // 3. Return the list of complaints
+        res.status(200).json({
+            success: true,
+            complaints: complaints
+        });
+
+    } catch (err) {
+        console.error("Error fetching user complaints:", err);
+        res.status(500).json({
+            message: "Error fetching complaints"
+        });
+    }
+};
+
+
 
 //just saving the complain with photo url
 exports.newComplaint=async(req,res)=>{
