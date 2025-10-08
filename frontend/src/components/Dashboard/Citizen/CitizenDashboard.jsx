@@ -1,4 +1,4 @@
-import { useState,useEffect } from 'react';
+import { useState,useEffect , useCallback} from 'react';
 import {
   Box,
   Button,
@@ -13,14 +13,16 @@ import {
   Snackbar,
   Alert,
 } from '@mui/material';
-import { Add, CloudUpload, EmojiEvents } from '@mui/icons-material';
+import { Add, CloudUpload, EmojiEvents, Edit, Delete } from '@mui/icons-material';
 import { Header } from '../Shared/Header/Header';
 import { Footer } from '../Shared/Footer/Footer';
-import { postComplaint, getComplaints} from '../../utility/utility';
+import { postComplaint, getComplaints, getSingleComplaint, updateComplaint, deleteComplaint} from '../../utility/utility';
 
 
 const CitizenDashboard = () => {
   const[email,setEmail]=useState('');
+  const [complaint, setUserComplaints] = useState([]);
+
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
     if (storedEmail) {
@@ -28,69 +30,120 @@ const CitizenDashboard = () => {
     }
   }, []);
 
+  // new useEffect to fetch complaints
+  // Centralized Fetching Function to get the latest list of user complaints
+  const fetchComplaints = useCallback(async () => {
+    const data = await getComplaints("myComplaints"); 
+    if (data) {
+      setUserComplaints(data);
+    }
+  }, []);
+
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchComplaints();
+  }, [fetchComplaints]);
+
   const [showForm, setShowForm] = useState(false);
   const [showToast, setShowToast] = useState(false);
-
+  const [isEditing, setIsEditing] = useState(false); 
+  const [currentComplaintId, setCurrentComplaintId] = useState(null); 
   const [formData, setFormData] = useState({
     title: '',
     category: 'Other',
     description: '',
     location: '',
-    pin:0,
+    pin: '',
     photoUrl:null,
   });
 
-  const [complaint, setUserComplaints] = useState([]);
+  // Resets the form and sets the mode for a NEW complaint submission
+  const startNewComplaint = () => {
+    setIsEditing(false);
+    setCurrentComplaintId(null);
+    setFormData({ title: '', category: 'Other', description: '', location: '', pin: '', photoUrl: null });
+    setShowForm(true);
+  };
+ 
+  const startEditComplaint = async (complaintId) => {
+    // Construct the URL path for fetching a single complaint
+    const complaint = await getSingleComplaint(`myComplaint/${complaintId}`);
+    if (complaint && complaint.title) {
+        setIsEditing(true);
+        setCurrentComplaintId(complaintId);
+        // Populate form with fetched data
+        setFormData({
+            title: complaint.title,
+            category: complaint.category,
+            description: complaint.description,
+            location: complaint.location,
+            pin: String(complaint.pin), 
+            photoUrl: complaint.photoUrl || null,
+        });
+        setShowForm(true);
+    }
+    else if(complaint === false) {
+      setShowForm(false); 
+      // the utility func alreasy alerts on failure, but we ensure the form isn't shown
+      setShowForm(false);
+    }
+  };
 
-  // new useEffect to fetch complaints
-  useEffect(() => {
-    const fetchComplaints = async () => {
-      // Call the new GET utility function
-      const data = await getComplaints("myComplaints"); 
-      if (data) {
-        setUserComplaints(data); // Set the state with fetched data
-      }
-    };
 
-    fetchComplaints();
-  }, []); 
-  const handleSubmit = async(e) => {
-
+  // Handler for NEW complaint SUBMISSION (POST)
+  const handleNewSubmit = async (e) => {
     e.preventDefault();
-    // Simulate success
-    const email = localStorage.getItem("userEmail");  //  get saved email
+    const email = localStorage.getItem("userEmail");
+    const dataToSend = { ...formData, email: email, pin: formData.pin || "000000" };
 
-  const dataToSend = {
-    ...formData,
-    email: email,
-    pin: formData.pin || "000000",  // or collect pin in form properly
+    const success = await postComplaint(dataToSend, "newComplaint");
+
+    if (success) {
+      await fetchComplaints(); // Refresh list instantly
+      setShowToast(true);
+      startNewComplaint(); // Reset form to clear values
+      setShowForm(false);
+    } else {
+      alert("Complaint submission failed ");
+    }
   };
 
-  const success = await postComplaint(dataToSend, "newComplaint");
-
-  if (success) {
-    const data = await getComplaints("myComplaints"); 
-      if (data) {
-        setUserComplaints(data); // Set the state with fetched data
-      }
-    // alert("Run");
-    setShowToast(true);
-    setFormData({ title: '', category: '', description: '', location: '', pin: '' });
-    setShowForm(false);
-  } else {
-    alert("Complaint submission failed ");
-  }
+  // Handler for UPDATE complaint (PUT)
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    // Use currentComplaintId to identify the resource to update
+    const dataToSend = { ...formData };
+    
+    const success = await updateComplaint(`myComplaint/${currentComplaintId}`, dataToSend);
+    if (success) {
+        await fetchComplaints(); // Refresh list
+        setShowToast(true);
+        setShowForm(false);
+    }
   };
 
-  const totalPoints = complaint.reduce((sum, complaint) => sum + (complaint.points || 0), 0);
+  // Handler for DELETE complaint (DELETE)
+  const handleDelete = async () => {
+    if(window.confirm('Are you sure you want to delete this complaint? This cannot be undone.')) {
+        const success = await deleteComplaint(`myComplaint/${currentComplaintId}`);
+        if (success) {
+            await fetchComplaints(); // Refresh list
+            setShowForm(false);
+        }
+    }
+  };
 
+// Calculates total points based on the fetched data
+  const totalPoints = complaint.reduce((sum, complaint) => sum + (complaint.priority || 0), 0);
+  
   return (
     <Box className="min-h-screen flex flex-col">
       <Header />
 
       <Box component="main" px={4} py={6} flex="1" bgcolor="#f9f9f9">
         <Box maxWidth="lg" mx="auto">
-          {/* Title */}
+          
+          {/* Title and Stats Cards */}
           <Box mb={4}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               Citizen Dashboard
@@ -99,9 +152,8 @@ const CitizenDashboard = () => {
               Manage your complaints and track their progress
             </Typography>
           </Box>
-
-          {/* Stats Cards */}
           <Grid container spacing={3} mb={5}>
+            {/* ... (Stat cards displaying real data based on complaint.length) ... */}
             <Grid item xs={12} sm={6} md={3}>
               <Paper elevation={3} sx={{ p: 2 }}>
                 <Typography color="text.secondary">Total Complaints</Typography>
@@ -112,7 +164,7 @@ const CitizenDashboard = () => {
               <Paper elevation={3} sx={{ p: 2 }}>
                 <Typography color="text.secondary">Resolved</Typography>
                 <Typography variant="h5">
-                  {complaint.filter((c) => c.status === 'Resolved').length}
+                  {complaint.filter((c) => c.status === 'resolved').length}
                 </Typography>
               </Paper>
             </Grid>
@@ -120,7 +172,7 @@ const CitizenDashboard = () => {
               <Paper elevation={3} sx={{ p: 2 }}>
                 <Typography color="text.secondary">In Progress</Typography>
                 <Typography variant="h5" color="warning.main">
-                  {complaint.filter((c) => c.status === 'In Progress').length}
+                  {complaint.filter((c) => c.status === 'in-progress').length}
                 </Typography>
               </Paper>
             </Grid>
@@ -141,27 +193,63 @@ const CitizenDashboard = () => {
               </Paper>
             </Grid>
           </Grid>
+          
+          {/* 1. Complaints List (Display section above the button) */}
+          <Box mb={5}>
+            <Typography variant="h5" fontWeight="bold" mb={3}>
+              My Complaints
+            </Typography>
+            <Grid container spacing={3}>
+              {complaint.map((complaint) => (
+                <Grid item xs={12} md={6} lg={4} key={complaint._id}>
+                  <Paper 
+                    elevation={2} 
+                    sx={{ p: 2, cursor: 'pointer', '&:hover': { bgcolor: '#e0e0e0' } }}
+                    // Click the card to load data into the form for editing
+                    onClick={() => startEditComplaint(complaint._id)}
+                  >
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      {complaint.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {complaint.description}
+                    </Typography>
+                    <Typography variant="body2">📍 {complaint.location}</Typography>
+                    <Typography variant="body2" color="primary">
+                      Status: {complaint.status}
+                    </Typography>
+                    <Typography variant="caption" display="block" mt={1}>
+                      Date: {new Date(complaint.createdate).toLocaleDateString()}
+                    </Typography>
+                    <Typography variant="caption">Points: {complaint.priority || 0}</Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
 
-          {/* New Complaint Button */}
+
+          {/* 2. New Complaint Button */}
           <Box mb={4}>
             <Button
               variant="contained"
               startIcon={<Add />}
-              onClick={() => setShowForm(!showForm)}
+              onClick={startNewComplaint}
             >
               Submit New Complaint
             </Button>
           </Box>
 
-          {/* Complaint Form */}
+          {/* 3. Complaint Form (The dynamic form) */}
           {showForm && (
             <Paper elevation={3} sx={{ p: 4, mb: 5 }}>
               <Typography variant="h6" gutterBottom>
-                New Complaint
+                {isEditing ? `Edit Complaint` : 'New Complaint'}
               </Typography>
-              <form onSubmit={handleSubmit}>
+              {/* Select the correct handler (Update vs. New Submit) based on mode */}
+              <form onSubmit={isEditing ? handleUpdate : handleNewSubmit}> 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6} size={4} >
+                  <Grid item xs={12} md={6}>
                     <TextField
                       label="Complaint Title"
                       fullWidth
@@ -170,14 +258,12 @@ const CitizenDashboard = () => {
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     />
                   </Grid>
-                  <Grid item xs={12} md={6} size={4}>
+                  <Grid item xs={12} md={6}>
                     <FormControl fullWidth required>
                       <InputLabel>Category</InputLabel>
                       <Select
                         value={formData.category}
-                        onChange={(e) =>
-                          setFormData({ ...formData, category: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                         fullWidth
                         label="Category"
                       >
@@ -190,7 +276,7 @@ const CitizenDashboard = () => {
                     </FormControl>
                   </Grid>
 
-                  <Grid item xs={12} size={4}>
+                  <Grid item xs={12}>
                     <TextField
                       label="Location"
                       fullWidth
@@ -201,7 +287,7 @@ const CitizenDashboard = () => {
                   </Grid>
                   
 
-                  <Grid item xs={12} size={8}>
+                  <Grid item xs={12} sm={8}>
                     <TextField
                       label="Description"
                       multiline
@@ -223,72 +309,65 @@ const CitizenDashboard = () => {
                         const value = e.target.value;
                         if (/^\d*$/.test(value)) {
                           setFormData({ ...formData, pin: value });
-                        }else{
-                           <Alert onClose={() => setShowToast(false)} severity="success" sx={{ width: '100%' }}>
-                            Please enter a valid pincode!
-                          </Alert>
-
                         }
                       }}
                     />
                   </Grid>
 
 
-                  <Grid item xs={12} size={4}>
+                  <Grid item xs={12} md={4}>
+                    {/* Photo Upload/Update Button */}
                     <Button
                       component="label"
                       variant="outlined"
                       startIcon={<CloudUpload />}
                       fullWidth
                     >
-                      Upload Photo (Optional)
+                      {/* Text changes based on mode */}
+                      {isEditing ? 'Update Photo (Optional)' : 'Upload Photo (Optional)'}
                       <input type="file" hidden accept="image/*" />
                     </Button>
                   </Grid>
 
-                  <Grid item xs={12} md={6}>
-                    <Button type="submit"  variant="contained" fullWidth>
-                      Submit Complaint
-                    </Button>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Button variant="outlined" fullWidth onClick={() => setShowForm(false)}>
-                      Cancel
-                    </Button>
-                  </Grid>
+                  
+                  {isEditing ? (
+                    // EDIT MODE BUTTONS: Update, Delete, Cancel
+                    <>
+                      <Grid item xs={12} md={4}>
+                        <Button type="submit" startIcon={<Edit />} variant="contained" fullWidth>
+                          Update Complaint
+                        </Button>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <Button variant="contained" color="error" startIcon={<Delete />} fullWidth onClick={handleDelete}>
+                          Delete Complaint
+                        </Button>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <Button variant="outlined" fullWidth onClick={() => setShowForm(false)}>
+                          Cancel
+                        </Button>
+                      </Grid>
+                    </>
+                  ) : (
+                    // NEW COMPLAINT MODE BUTTONS: Submit, Cancel (occupies remaining space)
+                    <>
+                      <Grid item xs={12} md={4}>
+                        <Button type="submit" variant="contained" fullWidth>
+                          Submit Complaint
+                        </Button>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <Button variant="outlined" fullWidth onClick={() => setShowForm(false)}>
+                          Cancel
+                        </Button>
+                      </Grid>
+                    </>
+                  )}
                 </Grid>
               </form>
             </Paper>
           )}
-
-          {/* Complaints List */}
-          <Box>
-            <Typography variant="h5" fontWeight="bold" mb={3}>
-              My Complaints
-            </Typography>
-            <Grid container spacing={3}>
-              {complaint.map((complaint) => (
-                <Grid item xs={12} md={6} lg={4} key={complaint._id}>
-                  <Paper elevation={2} sx={{ p: 2 }}>
-                    <Typography variant="subtitle1" fontWeight="bold">
-                      {complaint.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {complaint.description}
-                    </Typography>
-                    <Typography variant="body2">📍 {complaint.location}</Typography>
-                    <Typography variant="body2" color="primary">
-                      Status: {complaint.status}
-                    </Typography>
-                    <Typography variant="caption" display="block" mt={1}>
-                      {complaint.date}
-                    </Typography>
-                    <Typography variant="caption">Points: {complaint.points}</Typography>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
         </Box>
       </Box>
 
@@ -302,7 +381,7 @@ const CitizenDashboard = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={() => setShowToast(false)} severity="success" sx={{ width: '100%' }}>
-          Complaint submitted!
+          Action successful!
         </Alert>
       </Snackbar>
     </Box>
