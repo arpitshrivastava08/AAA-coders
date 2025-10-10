@@ -7,38 +7,32 @@ import { Header } from '../Shared/Header/Header';
 import { Footer } from '../Shared/Footer/Footer';
 
 // --- Utility Functions ---
-import { getAllComplaints } from '../../utility/utility.js';
+import { getAllComplaints, getStaffnumber, assignmentStaff } from '../../utility/utility.js';
 
 // --- Material-UI Components ---
 import {
   Box,
   Button,
   Card,
-  CardContent,
-  CardHeader,
-  Chip, // ✅ 1. ADDED IMPORTS
   Container,
   Dialog,
   DialogContent,
-  FormControl, // ✅ 1. ADDED IMPORTS
+  FormControl,
   Grid,
-  LinearProgress,
-  MenuItem, // ✅ 1. ADDED IMPORTS
+  MenuItem,
   Paper,
-  Select, // ✅ 1. ADDED IMPORTS
+  Select,
   Stack,
   Tabs,
   Tab,
   Typography,
+  Chip,
 } from '@mui/material';
 
 // --- Material-UI Icons ---
-import BarChartIcon from '@mui/icons-material/BarChart';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import PieChartIcon from '@mui/icons-material/PieChart';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
-// ✅ 1. ADDED ICON IMPORTS (assuming 'lucide-react')
+// --- Icon Imports ---
 import { MapPin, Calendar, User } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -46,40 +40,106 @@ const AdminDashboard = () => {
   const [email, setEmail] = useState('');
   const [complaints, setComplaints] = useState([]);
   const [tab, setTab] = useState(0);
+  const [openRegisterModal, setOpenRegisterModal] = useState(false);
+  const [localAssignments, setLocalAssignments] = useState({});
+  const [staffCount, setStaffCount] = useState(0);
+  const [status, setStatus] = useState('');
+  const [localStatuses, setLocalStatuses] = useState({});
 
-  const analyticsData = {
-    totalComplaints: 12,
-    resolved: 8,
-    inProgress: 3,
-    pending: 1,
-    pointsEarned: 650,
-    categories: {
-      'Road Damage': 5,
-      'Water Leakage': 4,
-      'Garbage': 3,
-    },
-    monthlyTrend: [
-      { month: 'Jun', complaints: 2 },
-      { month: 'Jul', complaints: 3 },
-      { month: 'Aug', complaints: 4 },
-      { month: 'Sep', complaints: 3 },
-    ],
+  // --- Data Fetching ---
+  const fetchComplaints = useCallback(async () => {
+    try {
+      const data = await getAllComplaints("allComplaints");
+      if (data) {
+        setComplaints(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch complaints:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('userEmail');
+    if (storedEmail) {
+      setEmail(storedEmail);
+    }
+    fetchComplaints();
+  }, [fetchComplaints]);
+
+  useEffect(() => {
+    const fetchStaffCount = async () => {
+      try {
+        const count = await getStaffnumber("getStaffnumber");
+        if (count) {
+          setStaffCount(count);
+        }
+      } catch (error) {
+        console.error("Failed to fetch staff count:", error);
+      }
+    };
+    fetchStaffCount();
+  }, []);
+
+  // --- Handlers & Helper Functions ---
+  const handleOpenModal = () => setOpenRegisterModal(true);
+  const handleCloseModal = () => setOpenRegisterModal(false);
+  const handleTabChange = (event, newValue) => setTab(newValue);
+
+  const getPriorityColor = (urgency) => {
+    switch (urgency?.toLowerCase()) {
+      case 'high': return { text: 'high', color: '#d32f2f' };
+      case 'medium': return { text: 'medium', color: '#ed6c02' };
+      case 'low': return { text: 'low', color: '#2e7d32' };
+      default: return { text: 'Standard', color: '#6c757d' };
+    }
   };
 
-  const handleSaveProgress = (complaintId) => {
-    console.log(`Saving progress for complaint ${complaintId}`);
-    // Add your API call logic here
+  const handleAssignmentChange = (complaintId, staffId) => {
+    setLocalAssignments(prev => ({ ...prev, [complaintId]: staffId }));
   };
 
-  // JavaScript-compatible mapping
-  const statusKeyMap = {
-    resolved: 'resolved',
-    'in-progress': 'inProgress',
-    pending: 'pending',
+  const handleSaveChanges = async (complaintId) => {
+    const newStaffId = localAssignments[complaintId];
+    const status = localStatuses[complaintId];
+
+    try {
+      const success = await assignmentStaff({ complaintId: complaintId, newStaffId: newStaffId, status: status }, "assignmentStaff");
+      if (success) {
+        // After a successful save, update the main complaints list to show the change immediately
+        setComplaints(prevComplaints =>
+          prevComplaints.map(c =>
+            c._id === complaintId ? { ...c, assigned: newStaffId } : c
+          )
+        );
+        setComplaints(prevComplaints =>
+          prevComplaints.map(c =>
+            c._id === complaintId ? { ...c, urgency: status } : c
+          )
+        );
+
+        // And remove the entry from localAssignments to reset the button state
+        setLocalAssignments(prev => {
+          const newAssignments = { ...prev };
+          delete newAssignments[complaintId];
+          return newAssignments;
+        });
+      }
+    } catch (error) {
+      console.error("Failed to save assignment:", error);
+      // Optionally, show an error message to the user
+    }
   };
 
-  // Static data for analytics
-  const analyticsData = { /* ... your analytics data ... */ };
+  const handleViewDetails = (complaintId) => {
+    console.log(`Viewing details for complaint ${complaintId}`);
+    // Add your navigation or modal logic here
+  };
+  const handleStatusChange = (complaintId, newStatus) => {
+    setLocalStatuses(prevStatuses => ({
+      ...prevStatuses, // Keep all the old statuses
+      [complaintId]: newStatus // Update the status for just this one complaint
+    }));
+  };
 
   return (
     <Box display="flex" flexDirection="column" minHeight="100vh">
@@ -111,11 +171,6 @@ const AdminDashboard = () => {
             </Dialog>
           </Box>
 
-          {/* Analytics Cards */}
-          <Grid container spacing={3} mb={4}>
-            {/* ... your existing analytics Grid items ... */}
-          </Grid>
-
           {/* Tab Navigation */}
           <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
             <Tab label="All Complaints" />
@@ -124,26 +179,104 @@ const AdminDashboard = () => {
 
           {/* --- TAB PANELS --- */}
           {tab === 0 && (
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <Card>
-                  <CardHeader title="Status Distribution" subheader="Breakdown of complaint statuses" />
-                  <CardContent>
-                    {Object.entries(statusKeyMap).map(([label, key]) => {
-                      const value = analyticsData[key];
-                      const percent = (value / analyticsData.totalComplaints) * 100;
-                      const color =
-                        label === 'resolved'
-                          ? 'success'
-                          : label === 'in-progress'
-                          ? 'warning'
-                          : 'error';
+            <>
+              {complaints.length === 0 ? (
+                <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
+                  <Typography color="text.secondary">
+                    No complaints found.
+                  </Typography>
+                </Paper>
+              ) : (
+                <Grid container spacing={3}>
+                  {complaints.map((complaint) => {
+                    const priorityStyles = getPriorityColor(complaint.urgency);
 
-                      return (
-                        <Box key={label} mb={2}>
-                          <Box display="flex" justifyContent="space-between" mb={1}>
-                            <Typography>{label}</Typography>
-                            <Typography color="text.secondary">{value}</Typography>
+                    return (
+                      <Grid item xs={12} sm={6} lg={4} key={complaint._id}>
+                        <Paper elevation={3} sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
+                          <Stack spacing={2} sx={{ flexGrow: 1 }}>
+                            {/* Card Header */}
+                            <Box display="flex" justifyContent="space-between" alignItems="center">
+                              <Box>
+                                <Typography variant="h6">{complaint.title}</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  ID: {complaint._id.substring(0, 8)}
+                                </Typography>
+                              </Box>
+                              <Chip
+                                label={priorityStyles.text}
+                                variant="outlined"
+                                size="small"
+                                sx={{ color: priorityStyles.color, borderColor: priorityStyles.color }}
+                              />
+                            </Box>
+                            {/* Card Body */}
+                            <Typography variant="body2" sx={{
+                              display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden', textOverflow: 'ellipsis', minHeight: '60px'
+                            }}>
+                              {complaint.description}
+                            </Typography>
+                            {/* Card Details */}
+                            <Stack spacing={1}>
+                              <Typography variant="caption" color="text.secondary" display="flex" alignItems="center">
+                                <MapPin size={14} style={{ marginRight: '8px' }} /> {complaint.location}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" display="flex" alignItems="center">
+                                <Calendar size={14} style={{ marginRight: '8px' }} /> {new Date(complaint.createdate).toLocaleDateString()}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" display="flex" alignItems="center">
+                                <User size={14} style={{ marginRight: '8px' }} /> Assigned: {complaint.assigned === 0 ? 'Unassigned' : complaint.assigned}
+                              </Typography>
+                            </Stack>
+                          </Stack>
+
+                          {/* Card Actions */}
+                          <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #eee' }}>
+                            <Stack direction="row" spacing={1} justifyContent="space-between">
+                              <FormControl size="small" sx={{ minWidth: 140 }}>
+                                <Select
+                                  value={localAssignments[complaint._id] ?? complaint.assigned ?? 0}
+                                  onChange={(e) => handleAssignmentChange(complaint._id, e.target.value)}
+                                >
+                                  <MenuItem value={0}>Unassigned</MenuItem>
+                                  {Array.from({ length: staffCount }, (_, i) => i + 1).map((staffId) => (
+                                    <MenuItem key={staffId} value={staffId}>
+                                      Assign to Staff {staffId}
+                                    </MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                              <FormControl size="small" sx={{ minWidth: 120 }}>
+                                <Select
+                                  // 1. Look up THIS complaint's status in the state object.
+                                  //    If it's not there, use the original status from the data.
+                                  value={localStatuses[complaint._id] ?? complaint.urgency ?? 'low'}
+
+                                  // 2. When this dropdown changes, call the handler with THIS complaint's ID.
+                                  onChange={(e) => handleStatusChange(complaint._id, e.target.value)}
+                                >
+                                  <MenuItem value="low">Low</MenuItem>
+                                  <MenuItem value="medium">Medium</MenuItem>
+                                  <MenuItem value="high">High</MenuItem>
+                                </Select>
+                              </FormControl>
+
+                              <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => handleSaveChanges(complaint._id)}
+                                // Logic for disabling the button
+                                disabled={!(complaint._id in localAssignments) && !(complaint._id in localStatuses)}
+                                // Logic for changing the color
+                                color={(complaint._id in localAssignments) || (complaint._id in localStatuses) ? '' : 'primary'}
+                              >
+                                Save Changes
+                              </Button>
+
+
+
+                            </Stack>
                           </Box>
                         </Paper>
                       </Grid>
@@ -156,7 +289,7 @@ const AdminDashboard = () => {
 
           {tab === 1 && (
             <Card>
-              {/* ... your "By Category" content ... */}
+              <Typography sx={{ p: 2 }}>Content for "By Category" goes here.</Typography>
             </Card>
           )}
 
