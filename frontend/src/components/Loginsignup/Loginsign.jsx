@@ -44,6 +44,14 @@ const Emailvalidation=(Email)=>{
      if(result){
       //storing the email locally
        localStorage.setItem('userEmail', Email);
+
+        if(result.role === "staff" && result.staffnumber !== null) {
+          localStorage.setItem('staffnumber', String(result.staffnumber));
+        } else {
+          // clear any existing staff number if the role is not staff
+          localStorage.removeItem('staffnumber');
+        }
+
         if (result.role === "citizen") navigate("/citizen");
         else if (result.role === "admin") navigate("/admin");
         else if (result.role === "staff") navigate("/staff");

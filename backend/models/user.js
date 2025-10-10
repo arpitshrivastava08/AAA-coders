@@ -9,13 +9,9 @@ const userschema=new mongoose.Schema({
     otpexpiry :{ type :Date},
     isverified : { type : Boolean, default : false}, // email verification state
     role:{type:String,enum:['citizen','staff','admin'],default:'citizen'},
-    priority:{type:Number,default:0}
+    priority:{type:Number,default:0},
+    staffnumber:{type:Number,default:0},
 });
 
 const User=mongoose.model('User',userschema);
 module.exports = User;
-
-
-
-
-

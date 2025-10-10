@@ -12,7 +12,7 @@ const complaintschema= new mongoose.Schema({
   pin:{type:String,required:true},
   status: { type: String, enum: ['pending', 'in-progress', 'resolved'], default: 'pending' },
   createdate: { type: Date, default: Date.now },
-  assigned: { type: String, default: null},
+  assigned: { type: Number, default:0},
 });
 
 const Complaint = mongoose.model('Complaint', complaintschema);

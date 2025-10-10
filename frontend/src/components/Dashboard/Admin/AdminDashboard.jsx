@@ -28,7 +28,7 @@ const AdminDashboard = () => {
     totalComplaints: 12,
     resolved: 8,
     inProgress: 3,
-    open: 1,
+    pending: 1,
     pointsEarned: 650,
     categories: {
       'Road Damage': 5,
@@ -49,9 +49,9 @@ const AdminDashboard = () => {
 
   // JavaScript-compatible mapping
   const statusKeyMap = {
-    Resolved: 'resolved',
-    'In Progress': 'inProgress',
-    Open: 'open',
+    resolved: 'resolved',
+    'in-progress': 'inProgress',
+    pending: 'pending',
   };
 
   return (
@@ -124,9 +124,9 @@ const AdminDashboard = () => {
                       const value = analyticsData[key];
                       const percent = (value / analyticsData.totalComplaints) * 100;
                       const color =
-                        label === 'Resolved'
+                        label === 'resolved'
                           ? 'success'
-                          : label === 'In Progress'
+                          : label === 'in-progress'
                           ? 'warning'
                           : 'error';
 

@@ -90,7 +90,8 @@ exports.login= async(req,res)=>{
             id:user._id,
             name:user.name,
             email:user.email,
-            role:user.role
+            role:user.role,
+            staffnumber: user.staffnumber
         }; //creates a session on successfull login
         //session is a tempararoy memory on serve to remember who are we while browing and calling router like after login ones when the router s are again called then they need to know is this person authorotised or not like this!!!1
         //This avoid for asking email and password again and again
@@ -100,6 +101,7 @@ exports.login= async(req,res)=>{
             message:'login succesfull',
             role:user.role,
             name:user.name,
+            staffnumber: user.staffnumber
         }) //user
 };
 exports.logout = (req, res) => {
