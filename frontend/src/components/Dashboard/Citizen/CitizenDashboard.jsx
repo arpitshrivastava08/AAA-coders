@@ -20,15 +20,15 @@ import { postComplaint, getComplaints, getSingleComplaint, updateComplaint, dele
 
 
 const CitizenDashboard = () => {
-  const[email,setEmail]=useState('');
+  //const[email,setEmail]=useState('');
   const [complaint, setUserComplaints] = useState([]);
 
-  useEffect(() => {
-    const storedEmail = localStorage.getItem('userEmail');
-    if (storedEmail) {
-      setEmail(storedEmail);
-    }
-  }, []);
+  // useEffect(() => {
+  //   const storedEmail = localStorage.getItem('userEmail');
+  //   if (storedEmail) {
+  //     setEmail(storedEmail);
+  //   }
+  // }, []);
 
   // new useEffect to fetch complaints
   // Centralized Fetching Function to get the latest list of user complaints
@@ -48,6 +48,7 @@ const CitizenDashboard = () => {
   const [showToast, setShowToast] = useState(false);
   const [isEditing, setIsEditing] = useState(false); 
   const [currentComplaintId, setCurrentComplaintId] = useState(null); 
+  const [selectedFile, setSelectedFile] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     category: 'Other',
@@ -62,9 +63,25 @@ const CitizenDashboard = () => {
     setIsEditing(false);
     setCurrentComplaintId(null);
     setFormData({ title: '', category: 'Other', description: '', location: '', pin: '', photoUrl: null });
+    setSelectedFile(null); 
     setShowForm(true);
   };
  
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        
+        if (allowedTypes.includes(file.type)) {
+            setSelectedFile(file);
+            console.log(' File selected:', file.name);
+        } else {
+            alert(' Please select a valid image (JPEG, PNG, GIF, WebP)');
+            e.target.value = '';
+        }
+    }
+};
+
   const startEditComplaint = async (complaintId) => {
     // Construct the URL path for fetching a single complaint
     const complaint = await getSingleComplaint(`myComplaint/${complaintId}`);
@@ -100,7 +117,7 @@ const CitizenDashboard = () => {
         return; 
     }
     
-    const dataToSend = { ...formData, email: email, pin: formData.pin || "000000" };
+    const dataToSend = { ...formData, email: email, pin: formData.pin || "000000", photo: selectedFile };
 
     const success = await postComplaint(dataToSend, "newComplaint");
 
@@ -324,16 +341,38 @@ const CitizenDashboard = () => {
                   <Grid item xs={12} md={4}>
                     {/* Photo Upload/Update Button */}
                     <Button
-                      component="label"
-                      variant="outlined"
-                      startIcon={<CloudUpload />}
-                      fullWidth
+                        component="label"
+                        variant="outlined"
+                        startIcon={<CloudUpload />}
+                        fullWidth
                     >
-                      {/* Text changes based on mode */}
-                      {isEditing ? 'Update Photo (Optional)' : 'Upload Photo (Optional)'}
-                      <input type="file" hidden accept="image/*" />
+                        {/* Show filename if selected, otherwise show generic text */}
+                        {selectedFile 
+                            ? selectedFile.name 
+                            : (isEditing ? 'Update Photo (Optional)' : 'Upload Photo (Optional)')
+                        }
+                        <input 
+                            type="file" 
+                            hidden 
+                            accept="image/*" 
+                            // Add the onChange handler to capture the file
+                            onChange={handleFileChange} 
+                        />
                     </Button>
-                  </Grid>
+                    
+                    {/* Clear Photo button (only visible when a file is selected) */}
+                    {(selectedFile && !isEditing) && (
+                        <Button 
+                            size="small" 
+                            color="error" 
+                            variant="text" // Use text variant to be less intrusive
+                            onClick={() => setSelectedFile(null)} 
+                            sx={{ mt: 1 }}
+                        >
+                            Clear Selected Photo
+                        </Button>
+                    )}
+                </Grid>
 
                   
                   {isEditing ? (
