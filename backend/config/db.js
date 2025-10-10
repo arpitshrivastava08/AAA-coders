@@ -11,12 +11,12 @@ try{
            useUnifiedTopology: true // it tell mongoose to use new connecting management engine
     });
     console.log("MOngoDb connected successfully!!!!");
-    await User.createCollection(); //if collection is not created then it creates it
-     await Complaint.createCollection();
+    // await User.createCollection(); //if collection is not created then it creates it
+    //  await Complaint.createCollection();
     console.log("User and Complaint collection created Successfully!!!!");
 }
 catch(error){
-    console.log("Mongobd connection failed",error).message;
+    console.log("Mongobd connection failed",error.message);
 
 }
 };

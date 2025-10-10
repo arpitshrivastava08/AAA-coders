@@ -1,34 +1,57 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  CardHeader,
-  Typography,
-  Grid,
-  Tabs,
-  Tab,
-  LinearProgress,
-  Divider,
-  Paper,
-  Container,
-} from '@mui/material';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import PieChartIcon from '@mui/icons-material/PieChart';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+// --- React and Hooks ---
+import React, { useState, useEffect, useCallback } from 'react';
 
+// --- Custom Components ---
+import { RegisterUserForm } from '../SignUp/SignUp.jsx';
 import { Header } from '../Shared/Header/Header';
 import { Footer } from '../Shared/Footer/Footer';
 
+// --- Utility Functions ---
+import { getAllComplaints } from '../../utility/utility.js';
+
+// --- Material-UI Components ---
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip, // ✅ 1. ADDED IMPORTS
+  Container,
+  Dialog,
+  DialogContent,
+  FormControl, // ✅ 1. ADDED IMPORTS
+  Grid,
+  LinearProgress,
+  MenuItem, // ✅ 1. ADDED IMPORTS
+  Paper,
+  Select, // ✅ 1. ADDED IMPORTS
+  Stack,
+  Tabs,
+  Tab,
+  Typography,
+} from '@mui/material';
+
+// --- Material-UI Icons ---
+import BarChartIcon from '@mui/icons-material/BarChart';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import PieChartIcon from '@mui/icons-material/PieChart';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+
+// ✅ 1. ADDED ICON IMPORTS (assuming 'lucide-react')
+import { MapPin, Calendar, User } from 'lucide-react';
+
 const AdminDashboard = () => {
+  // --- State Management ---
+  const [email, setEmail] = useState('');
+  const [complaints, setComplaints] = useState([]);
   const [tab, setTab] = useState(0);
 
   const analyticsData = {
     totalComplaints: 12,
     resolved: 8,
     inProgress: 3,
-    open: 1,
+    pending: 1,
     pointsEarned: 650,
     categories: {
       'Road Damage': 5,
@@ -43,77 +66,63 @@ const AdminDashboard = () => {
     ],
   };
 
-  const handleTabChange = (event, newValue) => {
-    setTab(newValue);
+  const handleSaveProgress = (complaintId) => {
+    console.log(`Saving progress for complaint ${complaintId}`);
+    // Add your API call logic here
   };
 
   // JavaScript-compatible mapping
   const statusKeyMap = {
-    Resolved: 'resolved',
-    'In Progress': 'inProgress',
-    Open: 'open',
+    resolved: 'resolved',
+    'in-progress': 'inProgress',
+    pending: 'pending',
   };
+
+  // Static data for analytics
+  const analyticsData = { /* ... your analytics data ... */ };
 
   return (
     <Box display="flex" flexDirection="column" minHeight="100vh">
       <Header userType="admin" />
-
       <Box component="main" sx={{ bgcolor: '#f5f5f5', py: 4, flex: '1 0 auto' }}>
         <Container maxWidth="lg">
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            My Reports & Analytics
-          </Typography>
-          <Typography color="text.secondary" mb={4}>
-            View detailed insights about your complaint history
-          </Typography>
+          {/* Header and Register Button */}
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+            <Box>
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
+                Admin Reports & Analytics
+              </Typography>
+              <Typography color="text.secondary">
+                View detailed insights about all complaints
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<PersonAddIcon />}
+              sx={{ height: 'fit-content' }}
+              onClick={handleOpenModal}
+            >
+              Register Staff
+            </Button>
+            <Dialog open={openRegisterModal} onClose={handleCloseModal}>
+              <DialogContent>
+                <RegisterUserForm onSuccess={handleCloseModal} />
+              </DialogContent>
+            </Dialog>
+          </Box>
 
+          {/* Analytics Cards */}
           <Grid container spacing={3} mb={4}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardHeader title="Total Complaints" action={<BarChartIcon color="action" />} />
-                <CardContent>
-                  <Typography variant="h4">{analyticsData.totalComplaints}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardHeader title="Resolution Rate" action={<TrendingUpIcon color="primary" />} />
-                <CardContent>
-                  <Typography variant="h4" color="primary">
-                    {Math.round((analyticsData.resolved / analyticsData.totalComplaints) * 100)}%
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardHeader title="Avg. Resolution" action={<PieChartIcon color="action" />} />
-                <CardContent>
-                  <Typography variant="h4">4.2 days</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ bgcolor: 'primary.main', color: 'white' }}>
-                <CardHeader
-                  title="Points Earned"
-                  titleTypographyProps={{ color: 'inherit' }}
-                  action={<EmojiEventsIcon sx={{ color: 'white' }} />}
-                />
-                <CardContent>
-                  <Typography variant="h4">{analyticsData.pointsEarned}</Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+            {/* ... your existing analytics Grid items ... */}
           </Grid>
 
+          {/* Tab Navigation */}
           <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 3 }}>
-            <Tab label="Overview" />
+            <Tab label="All Complaints" />
             <Tab label="By Category" />
-            <Tab label="Timeline" />
           </Tabs>
 
+          {/* --- TAB PANELS --- */}
           {tab === 0 && (
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
@@ -124,9 +133,9 @@ const AdminDashboard = () => {
                       const value = analyticsData[key];
                       const percent = (value / analyticsData.totalComplaints) * 100;
                       const color =
-                        label === 'Resolved'
+                        label === 'resolved'
                           ? 'success'
-                          : label === 'In Progress'
+                          : label === 'in-progress'
                           ? 'warning'
                           : 'error';
 
@@ -136,101 +145,23 @@ const AdminDashboard = () => {
                             <Typography>{label}</Typography>
                             <Typography color="text.secondary">{value}</Typography>
                           </Box>
-                          <LinearProgress variant="determinate" value={percent} color={color} />
-                        </Box>
-                      );
-                    })}
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Card>
-                  <CardHeader title="Reward Points History" subheader="Your earning milestones" />
-                  <CardContent>
-                    <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-                      <Typography variant="subtitle1">Submission Rewards</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {analyticsData.totalComplaints} complaints × 50 pts
-                      </Typography>
-                      <Typography variant="h6" color="primary">
-                        {analyticsData.totalComplaints * 50}
-                      </Typography>
-                    </Paper>
-                    <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-                      <Typography variant="subtitle1">Resolution Bonus</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {analyticsData.resolved} resolved × 50 pts
-                      </Typography>
-                      <Typography variant="h6" color="secondary">
-                        {analyticsData.resolved * 50}
-                      </Typography>
-                    </Paper>
-                    <Divider />
-                    <Box display="flex" justifyContent="space-between" mt={2}>
-                      <Typography fontWeight="bold">Total Points</Typography>
-                      <Typography variant="h5" color="primary">
-                        {analyticsData.pointsEarned}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
+                        </Paper>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              )}
+            </>
           )}
 
           {tab === 1 && (
             <Card>
-              <CardHeader title="Complaints by Category" subheader="Distribution across issue types" />
-              <CardContent>
-                {Object.entries(analyticsData.categories).map(([category, count]) => {
-                  const percent = (count / analyticsData.totalComplaints) * 100;
-                  return (
-                    <Box key={category} mb={3}>
-                      <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography fontWeight="medium">{category}</Typography>
-                        <Typography color="text.secondary">{count} complaints</Typography>
-                      </Box>
-                      <LinearProgress variant="determinate" value={percent} color="primary" />
-                    </Box>
-                  );
-                })}
-              </CardContent>
+              {/* ... your "By Category" content ... */}
             </Card>
           )}
 
-          {tab === 2 && (
-            <Card>
-              <CardHeader title="Monthly Complaint Trend" subheader="Complaint submission pattern over time" />
-              <CardContent>
-                {analyticsData.monthlyTrend.map((item) => {
-                  const percent = (item.complaints / 5) * 100;
-                  return (
-                    <Box key={item.month} mb={2} display="flex" alignItems="center">
-                      <Box width={50}>
-                        <Typography color="text.secondary">{item.month}</Typography>
-                      </Box>
-                      <Box flex={1} ml={2}>
-                        <LinearProgress
-                          variant="determinate"
-                          value={percent}
-                          sx={{ height: 20, borderRadius: 1 }}
-                        />
-                        <Box position="relative" mt={-2.5} ml={1}>
-                          <Typography variant="caption" color="white">
-                            {item.complaints}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
         </Container>
       </Box>
-
       <Footer />
     </Box>
   );

@@ -42,10 +42,20 @@ const Emailvalidation=(Email)=>{
   const loginn=async()=>{
     let result=await postuser({email:Email,password:Password,role:Role},"login");
      if(result){
-if (result.role === "citizen") navigate("/citizen");
-else if (result.role === "admin") navigate("/admin");
-else if (result.role === "staff") navigate("/staff");
-//dashboard should be displayed!!!
+      //storing the email locally
+       localStorage.setItem('userEmail', Email);
+
+        if(result.role === "staff" && result.staffnumber !== null) {
+          localStorage.setItem('staffnumber', String(result.staffnumber));
+        } else {
+          // clear any existing staff number if the role is not staff
+          localStorage.removeItem('staffnumber');
+        }
+
+        if (result.role === "citizen") navigate("/citizen");
+        else if (result.role === "admin") navigate("/admin");
+        else if (result.role === "staff") navigate("/staff");
+        //dashboard should be displayed!!!
      }
 
   };

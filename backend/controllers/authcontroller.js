@@ -1,5 +1,4 @@
-const { User, Complaint } = require('../models/user');
-const cloudary=require('../config/cloudinary');
+const User = require('../models/user.js');
 const nodemailer=require('nodemailer');
 const crypto=require('crypto');
 
@@ -14,71 +13,6 @@ const transporter=nodemailer.createTransport({
 });
 const generateotp=()=>crypto.randomInt(100000,999999).toString(); //generating random 6 digit pin
 
-//geting the photourl after uploading the photo in the cloudanary
-exports.savephoto=async(req,res)=>{
-try{
-    if(!req.file)
-        return res.status(501).json({
-    message:"Photo not uploaded"
-});
-const result= await cloudary.uploader.upload(req.file.path,{
-    folder:"complaints"
-});
-res.status(201).json({
-    photourl:result.secure_url,
-    message:"Photourl generated!!!"
-});
-    }catch(err){
-        res.status(501).json({
-            message:"Failed while uploading the photo"
-        });
-    }
-
-};
-
-
-
-
-exports.newcomplaint=async(req,res)=>{
-    try{
-        const {email,title,description,category,photourl,location,locationpin,urgency}=req.body;
-        const user= await User.findOne({email});
-        if(!user){
-          return res.status(500).json({
-                message:"User not found!!!"
-            });
-        }
-
-        const complaint=new Complaint({
-             user:user._id,
-            title,
-            description,
-            category,
-            location,
-            locationpin,
-            status:"pending", //by default
-            photourl,
-            createdat: Date.now(),
-            urgency:'low'
-        });
-
-        await complaint.save();
-        res.status(201).json({
-            message: 'Complaint saved Successfully!!!'
-        });
-        
-    }
-    catch(err){
-        res.status(500).json({
-            messsage: "Error while saving complaint"
-        });
-    }
-
-
-};
-//just saving the complain with photo url
-
-
 exports.register=async(req,res)=>{
     const{name,email,password,role}=req.body;
     let user= await User.findOne({email});
@@ -88,7 +22,8 @@ exports.register=async(req,res)=>{
         return res.status(500).json({
     message:'User is alredge signed in. Plese login'});
         }
-    user.name=name;    
+    user.name=name;  
+    user.role=role;  
     user.password=password;    
     user.otpexpiry=new Date(Date.now()+10*60*1000);
     user.otp=generateotp();
@@ -138,11 +73,26 @@ exports.verifyotp=async(req,res)=>{
         user.otp=undefined; // no longer needed so we write undefined
         user.isverified=true;
         user.otpexpiry=undefined; // no longer needed coz the user is now verified
+        if(user.role==='staff'){
+            const countstaff= await User.countDocuments({
+                role:'staff',
+                isverified:true
+            });
+            user.staffnumber=countstaff+1;
+
+             await user.save(); //saves the details in backend batabase
+
+        res.status(200).json({
+            success: true,
+            message:'Email verified! Successfully.Your Staff Number key is '+user.staffnumber})
+        }
+        else{
         await user.save(); //saves the details in backend batabase
 
         res.status(200).json({
             success: true,
             message:'Email verified! Successfully. Please Login Now!!!'})
+        }
 }
 exports.login= async(req,res)=>{
         const {email,password,role}=req.body;
@@ -150,7 +100,7 @@ exports.login= async(req,res)=>{
         if(!user) return res.status(400).json({message:'User Not Found'});
         if(user.password!=password) return res.status(400).json({message:'User password is incorrect'});
         if(!user.isverified) return res.status(400).json({message:'email not verifiend'});
-        if(user.role!=role) return res.status(400).json({
+          if(user.role!=role) return res.status(400).json({
             message:"You are trying to login as someone else!!"
         });
 
@@ -158,7 +108,8 @@ exports.login= async(req,res)=>{
             id:user._id,
             name:user.name,
             email:user.email,
-            role:user.role
+            role:user.role,
+            staffnumber: user.staffnumber
         }; //creates a session on successfull login
         //session is a tempararoy memory on serve to remember who are we while browing and calling router like after login ones when the router s are again called then they need to know is this person authorotised or not like this!!!1
         //This avoid for asking email and password again and again
@@ -168,7 +119,7 @@ exports.login= async(req,res)=>{
             message:'Login succesfully!',
             role:user.role,
             name:user.name,
-            
+            staffnumber: user.staffnumber
         }) //user
 };
 exports.logout = (req, res) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -13,11 +13,14 @@ import {
   Button,
   Chip,
   Stack,
-  IconButton,
+  Snackbar, 
+  Alert,
+  Modal,
+  // IconButton,
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  FilterList as FilterIcon,
+  // FilterList as FilterIcon,
   Room as MapPinIcon,
   CalendarToday as CalendarIcon,
   Person as UserIcon,
@@ -25,109 +28,151 @@ import {
 
 import { Header } from '../Shared/Header/Header';
 import { Footer } from '../Shared/Footer/Footer';
+import { getStaffComplaints, updateComplaint, getSingleComplaint } from '../../utility/utility';
+
+const getStatusColor = (status) => {
+  const s = status?.toLowerCase(); 
+  if(s === 'pending' || s === 'pending') {
+    return { color: '#173f9f', bg: '#e0e9ff' };
+  }
+  if (s === 'in-progress') {
+    return { color: 'warning.dark', bg: 'warning.light' };
+  }
+  if (s === 'resolved') {
+    return { color: 'success.dark', bg: 'success.light' };
+  }
+
+  return { color: 'text.secondary', bg: 'grey.200' };
+};
+
+const getPriorityColor = (priority) => {
+    const p = priority?.toLowerCase();
+    if (p === 'high') {
+      return { color: 'error.dark', bg: 'error.light', text: 'High' };
+    }
+    if (p === 'medium') {
+      return { color: 'warning.dark', bg: 'warning.light', text: 'Medium' };
+    }
+    if (p === 'low' || p === '0' || p === 'unset') {
+      return { color: 'success.dark', bg: 'success.light', text: 'Low' };
+    }
+    return { color: 'text.secondary', bg: 'grey.200', text: 'Unset' };
+};
+
+const modalStyle = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: '90%',
+  maxWidth: 800,
+  bgcolor: 'background.paper',
+  boxShadow: 24,
+  p: 4,
+  borderRadius: 2,
+  maxHeight: '90vh',
+  overflowY: 'auto',
+};
 
 const StaffDashboard = () => {
+  // Retrieve staffnumber from localStorage (must be assigned field in db)
+  const staffnumber = localStorage.getItem('staffnumber');
+  const displayId = staffnumber || 'Not Logged In'; // use null as default  
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [staffComplaints, setStaffComplaints] = useState([]); 
+  const [localStatuses, setLocalStatuses] = useState({}); // Local state for status changes
+  const [showToast, setShowToast] = useState(false);
+  const [modalpending, setModalpending] = useState(false);
+  const [currentComplaintDetails, setCurrentComplaintDetails] = useState(null);
 
-  const allComplaints = [
-    {
-      id: 'C001',
-      title: 'Pothole on Main Street',
-      category: 'Road Damage',
-      description: 'Large pothole causing traffic issues near the intersection',
-      location: 'Main Street, Block A',
-      status: 'Open',
-      date: '2025-10-02',
-      citizenName: 'Akshita Khandelwal',
-      priority: 'High',
-      assignedTo: null,
-    },
-    {
-      id: 'C002',
-      title: 'Water Leak Near Park',
-      category: 'Water Leakage',
-      description: 'Continuous water leakage from pipeline causing water wastage',
-      location: 'Central Park, Gate 2',
-      status: 'In Progress',
-      date: '2025-10-01',
-      citizenName: 'Ashmit Gupta',
-      priority: 'Medium',
-      assignedTo: 'Municipal Worker #12',
-    },
-    {
-      id: 'C003',
-      title: 'Garbage Not Collected',
-      category: 'Garbage',
-      description: 'Garbage bin overflowing for 3 days, causing hygiene issues',
-      location: 'Sector 5, Street 12',
-      status: 'Open',
-      date: '2025-10-01',
-      citizenName: 'Arpit Kumar',
-      priority: 'High',
-      assignedTo: null,
-    },
-    {
-      id: 'C004',
-      title: 'Broken Street Light',
-      category: 'Street Light',
-      description: 'Street light not working, creating safety concerns at night',
-      location: 'Park Avenue, Lane 3',
-      status: 'Resolved',
-      date: '2025-09-28',
-      citizenName: 'Rajesh Sharma',
-      priority: 'Low',
-      assignedTo: 'Electrician Team A',
-    },
-  ];
+  // 1. Fetching Complaints Assigned to Staff
+  const fetchAssignedComplaints = useCallback(async () => {
+    if (!staffnumber) return;
 
-  const getStatusColor = (status) => {
-    const s = status.toLowerCase();
-    if (s === 'open') {
-      return { color: 'error.main', bg: 'error.light' };
+    // API CALL: Filters tasks assigned ONLY to this staff member
+    const data = await getStaffComplaints(`staffComplaints?staffnumber=${staffnumber}`);
+    
+    if (data) {
+      setStaffComplaints(data);
+      // Initialize local status state
+      const initialStatuses = data.reduce((acc, c) => {
+        acc[c._id] = c.status || 'pending'; 
+        return acc;
+      }, {});
+      setLocalStatuses(initialStatuses);
     }
-    if (s === 'in progress') {
-      return { color: 'warning.main', bg: 'warning.light' };
-    }
-    if (s === 'resolved') {
-      return { color: 'success.main', bg: 'success.light' };
-    }
-    return { color: 'text.secondary', bg: 'grey.200' };
+  }, [staffnumber]);
+
+  useEffect(() => {
+    fetchAssignedComplaints();
+  }, [fetchAssignedComplaints]);
+
+  // Handler for temporary status change in the dropdown
+  const handleLocalStatusChange = (complaintId, newStatus) => {
+    setLocalStatuses(prev => ({
+      ...prev,
+      [complaintId]: newStatus
+    }));
   };
 
-  const getPriorityColor = (priority) => {
-    const p = priority.toLowerCase();
-    if (p === 'high') {
-      return { color: 'error.dark', bg: 'error.light' };
+  // 3. Status Update Logic (Save Progress Button Action)
+  const handleSaveProgress = async (complaintId) => {
+    const newStatus = localStatuses[complaintId];
+    if (!newStatus) return; 
+
+    const statusToSend = newStatus.toLowerCase(); 
+
+    const dataToSend = { status: statusToSend };
+    
+    // API CALL: Update status in the database
+    const success = await updateComplaint(`myComplaint/${complaintId}`, dataToSend);
+
+    if (success) {
+      await fetchAssignedComplaints(); 
+      setShowToast(true); 
+    } else {
+      await fetchAssignedComplaints(); 
     }
-    if (p === 'medium') {
-      return { color: 'warning.dark', bg: 'warning.light' };
-    }
-    if (p === 'low') {
-      return { color: 'success.dark', bg: 'success.light' };
-    }
-    return { color: 'text.secondary', bg: 'grey.200' };
   };
 
-  const filteredComplaints = allComplaints.filter((complaint) => {
+  // 4. "View Details" Action
+  const handleViewDetails = async (complaintId) => {
+    // API CALL: Fetch full details for the modal
+    const complaint = await getSingleComplaint(`myComplaint/${complaintId}`); 
+    if (complaint) {
+        setCurrentComplaintDetails(complaint);
+        setModalpending(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalpending(false);
+    setCurrentComplaintDetails(null);
+  };
+  
+  // --- Filtering Logic ---
+  const filteredComplaints = staffComplaints.filter((complaint) => {
+    const statusToCheck = localStatuses[complaint._id] || complaint.status;
+
     const matchesSearch =
       complaint.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       complaint.location.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       filterStatus === 'all' ||
-      complaint.status.toLowerCase() === filterStatus.toLowerCase();
+      statusToCheck.toLowerCase() === filterStatus.toLowerCase();
     const matchesCategory =
       filterCategory === 'all' || complaint.category === filterCategory;
-    return matchesSearch && matchesStatus && matchesCategory;
+
+    return matchesSearch && matchesStatus && matchesCategory; 
   });
 
-  const stats = {
-    total: allComplaints.length,
-    open: allComplaints.filter((c) => c.status === 'Open').length,
-    inProgress: allComplaints.filter((c) => c.status === 'In Progress').length,
-    resolved: allComplaints.filter((c) => c.status === 'Resolved').length,
-  };
+  // Stats
+  const total = staffComplaints.length;
+  const pendingCount = staffComplaints.filter((c) => c.status?.toLowerCase() === 'pending' || c.status?.toLowerCase() === 'pending').length;
+  const inProgressCount = staffComplaints.filter((c) => c.status?.toLowerCase() === 'in-progress').length;
+  const resolvedCount = staffComplaints.filter((c) => c.status?.toLowerCase() === 'resolved').length;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -140,50 +185,16 @@ const StaffDashboard = () => {
               Staff Portal
             </Typography>
             <Typography color="text.secondary">
-              Manage and resolve citizen complaints efficiently
+              Manage and resolve citizen complaints efficiently. (Assigned ID: **{displayId}**)
             </Typography>
           </Box>
 
           {/* Stats */}
           <Grid container spacing={3} mb={4}>
-            <Grid item xs={12} sm={6} md={3}>
-              <Paper elevation={2} sx={{ p: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Total Complaints
-                </Typography>
-                <Typography variant="h5">{stats.total}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Paper elevation={2} sx={{ p: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Open
-                </Typography>
-                <Typography variant="h5" color="error">
-                  {stats.open}
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Paper elevation={2} sx={{ p: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  In Progress
-                </Typography>
-                <Typography variant="h5" color="warning.main">
-                  {stats.inProgress}
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Paper elevation={2} sx={{ p: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Resolved
-                </Typography>
-                <Typography variant="h5" color="success.main">
-                  {stats.resolved}
-                </Typography>
-              </Paper>
-            </Grid>
+            <StatCard title="Total Assigned" count={total} color="#3f51b5" />
+            <StatCard title="pending" count={pendingCount} color="error.main" />
+            <StatCard title="in-progress" count={inProgressCount} color="warning.main" />
+            <StatCard title="resolved" count={resolvedCount} color="success.main" />
           </Grid>
 
           {/* Filters */}
@@ -211,9 +222,9 @@ const StaffDashboard = () => {
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
                     <MenuItem value="all">All Status</MenuItem>
-                    <MenuItem value="open">Open</MenuItem>
-                    <MenuItem value="in progress">In Progress</MenuItem>
-                    <MenuItem value="resolved">Resolved</MenuItem>
+                    <MenuItem value="pending">pending</MenuItem>
+                    <MenuItem value="in-progress">in-progress</MenuItem>
+                    <MenuItem value="resolved">resolved</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -230,6 +241,7 @@ const StaffDashboard = () => {
                     <MenuItem value="Water Leakage">Water Leakage</MenuItem>
                     <MenuItem value="Garbage">Garbage</MenuItem>
                     <MenuItem value="Street Light">Street Light</MenuItem>
+                    <MenuItem value="Other">Other</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -237,55 +249,47 @@ const StaffDashboard = () => {
           </Paper>
 
           {/* Complaint Cards */}
-          {filteredComplaints.length > 0 ? (
-            <Grid container spacing={2}>
+          {filteredComplaints.length === 0 ? (
+            <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                No complaints found assigned to you matching your filters.
+              </Typography>
+            </Paper>
+          ) : (
+            <Grid container spacing={4}>
               {filteredComplaints.map((complaint) => {
-                const statusStyles = getStatusColor(complaint.status);
-                const priorityStyles = getPriorityColor(complaint.priority);
+                // Use local status for display if changed, otherwise use status from DB
+                const currentStatusText = localStatuses[complaint._id] || complaint.status?.toLowerCase() || 'pending';
+                const statusStyles = getStatusColor(currentStatusText);
+                const priorityStyles = getPriorityColor(complaint.urgency);
+                
+                // Check if local status differs from DB status to enable "Save Progress"
+                const isStatusChanged = currentStatusText !== (complaint.status?.toLowerCase() || 'pending');
+
                 return (
-                  <Grid item xs={12} md={6} key={complaint.id} size={6}>
-                    <Paper
-                      elevation={2}
-                      sx={{
-                        p: 3,
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}
-                    >
+                  <Grid item xs={12} md={6} key={complaint._id}>
+                    <Paper elevation={3} sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
                       <Stack spacing={2} sx={{ flexGrow: 1 }}>
-                        <Box display="flex" justifyContent="space-between" flexWrap="wrap">
+                        {/* Header and Priority */}
+                        <Box display="flex" justifyContent="space-between" flexWrap="wrap" alignItems="center">
                           <Box>
                             <Typography variant="h6">{complaint.title}</Typography>
                             <Typography variant="caption" color="text.secondary">
-                              ID: {complaint.id}
+                              ID: {complaint._id.substring(0, 8)}
                             </Typography>
                           </Box>
-                          <Stack direction="row" spacing={1}>
-                            <Chip
-                              label={complaint.status}
-                              size="small"
-                              sx={{
-                                color: statusStyles.color,
-                                bgcolor: statusStyles.bg,
-                              }}
-                            />
-                            <Chip
-                              label={complaint.priority}
-                              variant="outlined"
-                              size="small"
-                              sx={{
-                                color: priorityStyles.color,
-                                borderColor: priorityStyles.color,
-                              }}
-                            />
-                          </Stack>
+                          <Chip
+                            label={priorityStyles.text}
+                            variant="outlined"
+                            size="small"
+                            sx={{
+                              color: priorityStyles.color,
+                              borderColor: priorityStyles.color,
+                            }}
+                          />
                         </Box>
 
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            // Remove fixed width
-                            // width: 500,
+                        <Typography variant="body2" sx={{
                             display: '-webkit-box',
                             WebkitLineClamp: 3,
                             WebkitBoxOrient: 'vertical',
@@ -297,95 +301,56 @@ const StaffDashboard = () => {
                           {complaint.description}
                         </Typography>
 
-                        <Grid
-                          container
-                          spacing={1}
-                          direction="column"
-                          alignItems="stretch"
-                          wrap="nowrap"
-                        >
+                        {/* Details */}
+                        <Grid container spacing={1} direction="column" wrap="nowrap">
                           <Grid item>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              display="flex"
-                              alignItems="center"
-                            >
-                              <MapPinIcon
-                                fontSize="small"
-                                sx={{ mr: 0.5, color: 'text.secondary' }}
-                              />
+                            <Typography variant="caption" color="text.secondary" display="flex" alignItems="center">
+                              <MapPinIcon fontSize="small" sx={{ mr: 0.5 }} />
                               {complaint.location}
                             </Typography>
                           </Grid>
-
                           <Grid item>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              display="flex"
-                              alignItems="center"
-                            >
-                              <CalendarIcon
-                                fontSize="small"
-                                sx={{ mr: 0.5, color: 'text.secondary' }}
-                              />
-                              {complaint.date}
+                            <Typography variant="caption" color="text.secondary" display="flex" alignItems="center">
+                              <CalendarIcon fontSize="small" sx={{ mr: 0.5 }} />
+                              {new Date(complaint.createdate).toLocaleDateString()}
                             </Typography>
                           </Grid>
-
                           <Grid item>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              display="flex"
-                              alignItems="center"
-                            >
-                              <UserIcon
-                                fontSize="small"
-                                sx={{ mr: 0.5, color: 'text.secondary' }}
-                              />
-                              {complaint.citizenName}
-                            </Typography>
-                          </Grid>
-
-                          <Grid item>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              display="flex"
-                              alignItems="center"
-                            >
-                              Assigned:&nbsp;
-                              <Typography
-                                component="span"
-                                variant="caption"
-                                fontWeight="medium"
-                              >
-                                {complaint.assignedTo ?? 'Unassigned'}
-                              </Typography>
+                            <Typography variant="caption" color="text.secondary" display="flex" alignItems="center">
+                              <UserIcon fontSize="small" sx={{ mr: 0.5 }} />
+                              Assigned: {complaint.assigned === 0 ? 'Unassigned' : complaint.assigned}
                             </Typography>
                           </Grid>
                         </Grid>
 
-                        <Box sx={{ mt: 'auto' }}>
-                          <Stack direction="row" spacing={1} justifyContent="flex-end">
-                            <FormControl size="small">
+                        {/* Action Buttons */}
+                        <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #eee' }}>
+                          <Stack direction="row" spacing={1} justifyContent="space-between">
+                            {/* Status Update Dropdown */}
+                            <FormControl size="small" sx={{ minWidth: 120 }}>
                               <Select
-                                value={complaint.status.toLowerCase()}
-                                onChange={(e) => {
-                                  // handle change of status
-                                }}
+                                value={currentStatusText}
+                                onChange={(e) => handleLocalStatusChange(complaint._id, e.target.value)}
                               >
-                                <MenuItem value="open">Open</MenuItem>
-                                <MenuItem value="in progress">In Progress</MenuItem>
-                                <MenuItem value="resolved">Resolved</MenuItem>
+                                <MenuItem value="pending">pending</MenuItem>
+                                <MenuItem value="in-progress">in-progress</MenuItem>
+                                <MenuItem value="resolved">resolved</MenuItem>
                               </Select>
                             </FormControl>
-                            <Button variant="outlined" size="small">
-                              Assign Staff
+                            
+                            {/* Save Progress Button */}
+                            <Button 
+                                variant="contained" 
+                                size="small"
+                                onClick={() => handleSaveProgress(complaint._id)}
+                                disabled={!isStatusChanged}
+                                color={isStatusChanged ? 'warning' : 'inherit'}
+                            >
+                              Save Progress
                             </Button>
-                            <Button variant="contained" size="small">
+
+                            {/* View Details Button */}
+                            <Button variant="outlined" size="small" onClick={() => handleViewDetails(complaint._id)}>
                               View Details
                             </Button>
                           </Stack>
@@ -396,19 +361,122 @@ const StaffDashboard = () => {
                 );
               })}
             </Grid>
-          ) : (
-            <Paper elevation={2} sx={{ p: 4, textAlign: 'center' }}>
-              <Typography color="text.secondary">
-                No complaints found matching your filters.
-              </Typography>
-            </Paper>
           )}
         </Container>
       </Box>
+
+      {/* Details Modal */}
+      <DetailsModal 
+        pending={modalpending} 
+        handleClose={handleCloseModal} 
+        complaint={currentComplaintDetails} 
+        getStatusColor={getStatusColor}
+        getPriorityColor={getPriorityColor}
+      />
+
+      {/* Snackbar */}
+      <Snackbar
+        pending={showToast}
+        autoHideDuration={3000}
+        onClose={() => setShowToast(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setShowToast(false)} severity="success" sx={{ width: '100%' }}>
+          Progress saved successfully!
+        </Alert>
+      </Snackbar>
 
       <Footer />
     </Box>
   );
 };
+
+// Supporting Components
+
+const StatCard = ({ title, count, color }) => (
+    <Grid item xs={12} sm={6} md={3}>
+        <Paper elevation={3} sx={{ p: 2, borderBottom: `4px solid ${color}` }}>
+            <Typography variant="subtitle2" color="text.secondary">{title}</Typography>
+            <Typography variant="h5" sx={{ color: color }}>
+                {count}
+            </Typography>
+        </Paper>
+    </Grid>
+);
+
+const DetailsModal = ({ pending, handleClose, complaint, getPriorityColor, getStatusColor }) => {
+    if (!complaint) return null;
+  
+    const priorityStyles = getPriorityColor(complaint.urgency);
+    const statusStyles = getStatusColor(complaint.status);
+
+    return (
+      <Modal pending={pending} onClose={handleClose} aria-labelledby="complaint-details-title">
+        <Box sx={modalStyle}>
+          <Typography id="complaint-details-title" variant="h5" component="h2" mb={3} fontWeight="bold">
+            Complaint Details: {complaint.title}
+          </Typography>
+          
+          {/* Status and Priority Chips */}
+          <Stack direction="row" spacing={2} mb={3}>
+            <Chip 
+                label={`Status: ${complaint.status || 'pending'}`} 
+                sx={{ bgcolor: statusStyles.bg, color: statusStyles.color, fontWeight: 'bold' }}
+            />
+            <Chip 
+                label={`Priority: ${priorityStyles.text}`} 
+                sx={{ bgcolor: priorityStyles.bg, color: priorityStyles.color, fontWeight: 'bold' }}
+            />
+          </Stack>
+
+          <Grid container spacing={3}>
+            {/* Metadata */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="text.secondary">Category</Typography>
+              <Typography variant="body1" mb={1}>{complaint.category}</Typography>
+              
+              <Typography variant="subtitle2" color="text.secondary">Location</Typography>
+              <Typography variant="body1" mb={1}>{complaint.location}, PIN: {complaint.pin}</Typography>
+              
+              <Typography variant="subtitle2" color="text.secondary">Assigned To</Typography>
+              <Typography variant="body1" mb={1}>{complaint.assigned || 0}</Typography>
+              
+            </Grid>
+
+            {/* Description */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="text.secondary">Full Description</Typography>
+              <Paper variant="outlined" sx={{ p: 2, maxHeight: 200, overflowY: 'auto' }}>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {complaint.description}
+                </Typography>
+              </Paper>
+            </Grid>
+            
+            {/* Photo */}
+            {complaint.photoUrl && (
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+                  Citizen Submitted Photo
+                </Typography>
+                <Box component="img" src={complaint.photoUrl} alt="Complaint image" sx={{ 
+                    maxWidth: '100%', 
+                    height: 'auto', 
+                    borderRadius: 1, 
+                    border: '1px solid #ccc'
+                }} />
+              </Grid>
+            )}
+
+            <Grid item xs={12} mt={3}>
+              <Button onClick={handleClose} variant="contained" color="primary">
+                Close
+              </Button>
+            </Grid>
+          </Grid>
+        </Box>
+      </Modal>
+    );
+  };
 
 export { StaffDashboard };
