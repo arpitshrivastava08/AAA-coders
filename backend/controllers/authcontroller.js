@@ -100,7 +100,9 @@ exports.login= async(req,res)=>{
         if(!user) return res.status(400).json({message:'User Not Found'});
         if(user.password!=password) return res.status(400).json({message:'User password is incorrect'});
         if(!user.isverified) return res.status(400).json({message:'email not verifiend'});
-        if(user.role!=role) return res.status(404).json({message:'trying to login as someone else!!!'});
+          if(user.role!=role) return res.status(400).json({
+            message:"You are trying to login as someone else!!"
+        });
 
         req.session.user={
             id:user._id,
@@ -114,7 +116,7 @@ exports.login= async(req,res)=>{
         
         res.status(200).json(
             {
-            message:'login succesfull',
+            message:'Login succesfully!',
             role:user.role,
             name:user.name,
             staffnumber: user.staffnumber
