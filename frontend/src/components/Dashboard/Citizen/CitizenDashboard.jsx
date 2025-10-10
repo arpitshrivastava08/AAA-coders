@@ -94,6 +94,12 @@ const CitizenDashboard = () => {
   const handleNewSubmit = async (e) => {
     e.preventDefault();
     const email = localStorage.getItem("userEmail");
+    // ADDED CHECK: Ensure email exists before submitting
+    if (!email) {
+        alert("Authentication error: Please log in again.");
+        return; 
+    }
+    
     const dataToSend = { ...formData, email: email, pin: formData.pin || "000000" };
 
     const success = await postComplaint(dataToSend, "newComplaint");
@@ -162,7 +168,7 @@ const CitizenDashboard = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Paper elevation={3} sx={{ p: 2 }}>
-                <Typography color="text.secondary">Resolved</Typography>
+                <Typography color="text.secondary">resolved</Typography>
                 <Typography variant="h5">
                   {complaint.filter((c) => c.status === 'resolved').length}
                 </Typography>
@@ -170,7 +176,7 @@ const CitizenDashboard = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Paper elevation={3} sx={{ p: 2 }}>
-                <Typography color="text.secondary">In Progress</Typography>
+                <Typography color="text.secondary">in-progress</Typography>
                 <Typography variant="h5" color="warning.main">
                   {complaint.filter((c) => c.status === 'in-progress').length}
                 </Typography>
@@ -375,7 +381,7 @@ const CitizenDashboard = () => {
 
       {/* Snackbar */}
       <Snackbar
-        open={showToast}
+        pending={showToast}
         autoHideDuration={4000}
         onClose={() => setShowToast(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}

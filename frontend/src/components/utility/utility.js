@@ -141,7 +141,7 @@ export const getAllComplaints = async(uurl) => {
 };
 
 // Fetch complaints for staff (filtered by staff nummber)
-// uurl should be "StaffComplaints?staffNumber=STAFFID"
+// uurl should be "StaffComplaints?staffnumber=STAFFID"
 export const getStaffComplaints = async(uurl) => {
     const response = await fetch("http://localhost:3000/api/auth/"+uurl,{
         method:"GET", 
