@@ -22,7 +22,8 @@ exports.register=async(req,res)=>{
         return res.status(500).json({
     message:'User is alredge signed in. Plese login'});
         }
-    user.name=name;    
+    user.name=name;  
+    user.role=role;  
     user.password=password;    
     user.otpexpiry=new Date(Date.now()+10*60*1000);
     user.otp=generateotp();
@@ -72,11 +73,26 @@ exports.verifyotp=async(req,res)=>{
         user.otp=undefined; // no longer needed so we write undefined
         user.isverified=true;
         user.otpexpiry=undefined; // no longer needed coz the user is now verified
+        if(user.role==='staff'){
+            const countstaff= await User.countDocuments({
+                role:'staff',
+                isverified:true
+            });
+            user.staffnumber=countstaff+1;
+
+             await user.save(); //saves the details in backend batabase
+
+        res.status(200).json({
+            success: true,
+            message:'Email verified! Successfully.Your Staff Number key is '+user.staffnumber})
+        }
+        else{
         await user.save(); //saves the details in backend batabase
 
         res.status(200).json({
             success: true,
             message:'Email verified! Successfully. Please Login Now!!!'})
+        }
 }
 exports.login= async(req,res)=>{
         const {email,password,role}=req.body;

@@ -2,6 +2,50 @@ const Complaint = require('../models/complaint.js');
 const User = require('../models/user.js');
 const cloudinary=require('../config/cloudinary.js');
 
+// Get all complaints for Admin Dashboard
+exports.getAllComplaints = async (req , res) => {
+    try {
+        const complaints = await Complaint.find({})
+            .sort({createdate: -1});
+
+        res.status(200).json({
+            success: true,
+            complaints: complaints
+        });
+    } catch (err) {
+        console.error("Error fetching all complaintts:", err); 
+        res.status(500).json({
+            message: "Error fetching complaints for Admin"
+        }); 
+    }
+}; 
+
+// Get Staff Assigned Complaints (Filter by assigned staff number)
+exports.getStaffComplaints = async (req, res) => {
+    try {
+        // The staff number is expected in the query string (e.g., ?staffNumber=Staff #12)
+        const staffNumber = Number(req.query.staffNumber); 
+        
+        if (!staffNumber) {
+            return res.status(400).json({ message: 'Staff number is required for filtering.' });
+        }
+
+        // Find complaints where the 'assigned' field matches the staffNumber
+        const complaints = await Complaint.find({ assigned: staffNumber })
+            .sort({ createdate: -1 });
+
+        res.status(200).json({
+            success: true,
+            complaints: complaints
+        });
+
+    } catch (err) {
+        console.error("Error fetching staff complaints:", err);
+        res.status(500).json({
+            message: "Error fetching assigned complaints"
+        });
+    }
+};
 
 // New function to fetch complaints for the logged-in user
 exports.getUserComplaints = async (req, res) => {
@@ -30,8 +74,6 @@ exports.getUserComplaints = async (req, res) => {
         });
     }
 };
-
-//just saving the complain with photo url
 exports.newComplaint=async(req,res)=>{
     try{
         const {email,title,category,description,location,pin,photoUrl}=req.body;

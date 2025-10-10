@@ -120,3 +120,42 @@ export const deleteComplaint = async(uurl) => {
     return false;
     }
 };
+
+// Fetch all compaints for Admin portal 
+export const getAllComplaints = async(uurl) => {
+    const response = await fetch("http://localhost:3000/api/auth/"+uurl,{
+        method:"GET", 
+        headers:{
+            "Content-Type": "application/json"
+        },
+        credentials: "include"  // Required for sessions
+    });
+    const result=await response.json()
+     if(response.ok){
+        return result.complaints; 
+        }
+    else{
+    alert(result.message || "Failed to fetch all complaints.");
+    return false;
+    }
+};
+
+// Fetch complaints for staff (filtered by staff nummber)
+// uurl should be "StaffComplaints?staffNumber=STAFFID"
+export const getStaffComplaints = async(uurl) => {
+    const response = await fetch("http://localhost:3000/api/auth/"+uurl,{
+        method:"GET", 
+        headers:{
+            "Content-Type": "application/json"
+        },
+        credentials: "include"  
+    });
+    const result=await response.json()
+     if(response.ok){
+        return result.complaints; // return array of assigned complaints
+        }
+    else{
+    alert(result.message || "Failed to fetch assigned complaints.");
+    return false;
+    }
+}
