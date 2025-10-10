@@ -1,5 +1,5 @@
 export const postuser = async (data, uurl) => {
-    const response = await fetch("http://localhost:3000/api/auth/" + uurl, { //sending the data on this network
+    const response = await fetch("https://clean-city-connect-three.vercel.app/api/auth/" + uurl, { //sending the data on this network
 
         method: "POST", //using postr method
         headers: {
@@ -48,7 +48,7 @@ export const postComplaint = async (data, uurl) => {
             body = JSON.stringify(data);
             headers['Content-Type'] = 'application/json';
         }
-        const response = await fetch("http://localhost:3000/api/auth/" + uurl, { //sending the data on this network
+        const response = await fetch("https://clean-city-connect-three.vercel.app/api/auth/" + uurl, { //sending the data on this network
             method: "POST", //using postr method
             // dynamically defined headers and body
             headers: headers,
@@ -79,7 +79,7 @@ export const postComplaint = async (data, uurl) => {
 
 // NEW FUNCTION to fetch data (GET requests)
 export const getComplaints = async (uurl) => {
-    const response = await fetch("http://localhost:3000/api/auth/" + uurl, {
+    const response = await fetch("https://clean-city-connect-three.vercel.app/api/auth/" + uurl, {
         method: "GET", // using GET method
         headers: {
             "Content-Type": "application/json"
@@ -98,7 +98,7 @@ export const getComplaints = async (uurl) => {
 
 // GET single complaint 
 export const getSingleComplaint = async (uurl) => {
-    const response = await fetch("http://localhost:3000/api/auth/" + uurl, {
+    const response = await fetch("https://clean-city-connect-three.vercel.app/api/auth/" + uurl, {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
@@ -118,7 +118,7 @@ export const getSingleComplaint = async (uurl) => {
 
 // PUT update complaint
 export const updateComplaint = async (uurl, data) => {
-    const response = await fetch("http://localhost:3000/api/auth/" + uurl, {
+    const response = await fetch("https://clean-city-connect-three.vercel.app/api/auth/" + uurl, {
         method: "PUT", // using PUT method to update 
         headers: {
             "Content-Type": "application/json"
@@ -139,7 +139,7 @@ export const updateComplaint = async (uurl, data) => {
 
 // NEW FUNCTION : DELETE complaint
 export const deleteComplaint = async (uurl) => {
-    const response = await fetch("http://localhost:3000/api/auth/" + uurl, {
+    const response = await fetch("https://clean-city-connect-three.vercel.app/api/auth/" + uurl, {
         method: "DELETE", // using DELETE method to update 
         headers: {
             "Content-Type": "application/json"
@@ -159,7 +159,7 @@ export const deleteComplaint = async (uurl) => {
 
 // Fetch all compaints for Admin portal 
 export const getAllComplaints = async (uurl) => {
-    const response = await fetch("http://localhost:3000/api/auth/" + uurl, {
+    const response = await fetch("https://clean-city-connect-three.vercel.app/api/auth/" + uurl, {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
@@ -179,7 +179,7 @@ export const getAllComplaints = async (uurl) => {
 // Fetch complaints for staff (filtered by staff nummber)
 // uurl should be "StaffComplaints?staffnumber=STAFFID"
 export const getStaffComplaints = async (uurl) => {
-    const response = await fetch("http://localhost:3000/api/auth/" + uurl, {
+    const response = await fetch("https://clean-city-connect-three.vercel.app/api/auth/" + uurl, {
         method: "GET",
         headers: {
             "Content-Type": "application/json"
@@ -197,7 +197,7 @@ export const getStaffComplaints = async (uurl) => {
 }
 
 export const getStaffnumber = async(uurl) => {
-    const response = await fetch("http://localhost:3000/api/auth/"+uurl,{
+    const response = await fetch("https://clean-city-connect-three.vercel.app/api/auth/"+uurl,{
         method:"GET", 
         headers:{
             "Content-Type": "application/json"
@@ -216,7 +216,7 @@ export const getStaffnumber = async(uurl) => {
 
 // PUT update assignment
 export const assignmentStaff = async(data, uurl) => {
-    const response =await fetch("http://localhost:3000/api/auth/"+uurl,{
+    const response =await fetch("https://clean-city-connect-three.vercel.app/api/auth/"+uurl,{
         method:"POST", // using Post method 
         headers:{
             "Content-Type": "application/json"
