@@ -2,7 +2,8 @@ require('dotenv').config();
 const mongoose = require('mongoose'); // library of mongodb for  object data modeling 
 const { User, Complaint } = require('../models/user');
 
-const MONGO_URL=env.MONGO_URL;
+const MONGO_URL="mongodb+srv://ashmitgupta2006_db_user:GcGaLybQRkMhdQQb@clustercleancity0.mplzaet.mongodb.net/?retryWrites=true&w=majority&appName=Clustercleancity0"
+
 
 //connecting to mongo db database
 const connectDB=async()=>{
@@ -11,7 +12,7 @@ try{
          useNewUrlParser: true, // it tell mongoose to us4e new connection string Parse from mongodbdrive instead to old one
            useUnifiedTopology: true // it tell mongoose to use new connecting management engine
     });
-    console.log("MOngoDb connected successfully!!!!");
+    console.log("MongoDb connected successfully!!!!");
     // await User.createCollection(); //if collection is not created then it creates it
     //  await Complaint.createCollection();
     console.log("User and Complaint collection created Successfully!!!!");
