@@ -15,20 +15,20 @@ const allowedOrigins = [
     'http://localhost:3001', // Local dev environment 
 ];
 
-// const corsOptions = {
-//     origin: (origin, callback) => {
-//         // Allow requests with no origin (like mobile apps or curl requests)
-//         // AND allow all defined origins
-//         if (!origin || allowedOrigins.includes(origin)) {
-//             callback(null, true);
-//         } else {
-//             callback(new Error('Not allowed by CORS'));
-//         }
-//     },
-//     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-//     credentials: true, // IMPORTANT: Allows cookies (sessions) to be sent/received
-//     optionsSuccessStatus: 204
-// };
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        // AND allow all defined origins
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true, // IMPORTANT: Allows cookies (sessions) to be sent/received
+    optionsSuccessStatus: 204
+};
 
 app.use(cors(corsOptions));
 
