@@ -6,7 +6,7 @@ const cors=require('cors');
 
 
 const authrouter =require('./router/authrouters');
-
+const chatrouter = require('./router/chatrouter.js');
 
 const app=express();
 
@@ -47,6 +47,7 @@ app.use(session({
 connectDB();
 
 app.use('/api/auth',authrouter);
+app.use("/api/chat",chatrouter); 
 
 const port =3000;
 app.listen(port,()=>console.log("Server running on",port));
